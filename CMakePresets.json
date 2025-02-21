@@ -1,0 +1,18 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "MinGCC",
+            "displayName": "GCC 13.2.0 x86_64-w64-mingw32",
+            "description": "Using compilers: C = E:\\workspace-programming\\c-environment\\x86_64-13.2.0-release-posix-seh-ucrt-rt_v11-rev1\\mingw64\\bin\\gcc.exe, CXX = E:\\workspace-programming\\c-environment\\x86_64-13.2.0-release-posix-seh-ucrt-rt_v11-rev1\\mingw64\\bin\\g++.exe",
+            "generator": "MinGW Makefiles",
+            "binaryDir": "${sourceDir}/build/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "E:/workspace-programming/c-environment/x86_64-13.2.0-release-posix-seh-ucrt-rt_v11-rev1/mingw64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "E:/workspace-programming/c-environment/x86_64-13.2.0-release-posix-seh-ucrt-rt_v11-rev1/mingw64/bin/g++.exe",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        }
+    ]
+}
