@@ -17,8 +17,8 @@ void Game::LoadLevel()
     m_Level = {
         "#######",
         "#     #",
-        "#  @  #",
         "#  $  #",
+        "#  @  #",
         "#  .  #",
         "#     #",
         "#######"};
@@ -39,6 +39,46 @@ void Game::LoadLevel()
 void Game::Update()
 {
     // 这里可以处理玩家输入
+    // 获取当前按键状态
+    bool currentUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
+    bool currentDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
+    bool currentLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
+    bool currentRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
+
+    // 处理上方向键（仅在按键刚按下时触发）
+    if (currentUp && !m_LastKeys.up)
+    {
+        MovePlayer(0, -1);
+    }
+    m_LastKeys.up = currentUp;
+
+    // 处理下方向键
+    if (currentDown && !m_LastKeys.down)
+    {
+        MovePlayer(0, 1);
+    }
+    m_LastKeys.down = currentDown;
+
+    // 处理左方向键
+    if (currentLeft && !m_LastKeys.left)
+    {
+        MovePlayer(-1, 0);
+    }
+    m_LastKeys.left = currentLeft;
+
+    // 处理右方向键
+    if (currentRight && !m_LastKeys.right)
+    {
+        MovePlayer(1, 0);
+    }
+    m_LastKeys.right = currentRight;
+
+    // 检查关卡是否完成
+    if (IsLevelComplete())
+    {
+        std::cout << "Level Clear!" << std::endl;
+        // 可以在此处重置关卡或加载下一关
+    }
 }
 
 void Game::Render()
@@ -79,29 +119,49 @@ void Game::MovePlayer(int dx, int dy)
     int newX = m_PlayerX + dx;
     int newY = m_PlayerY + dy;
 
-    if (m_Level[newY][newX] == ' ' || m_Level[newY][newX] == '.')
+    // 边界检查
+    if (newX < 0 || newY < 0 || newY >= m_Level.size() || newX >= m_Level[newY].size())
+    {
+        return;
+    }
+
+    char targetTile = m_Level[newY][newX];
+
+    // 移动到空地或目标点
+    if (targetTile == ' ' || targetTile == '.')
     {
         m_Level[m_PlayerY][m_PlayerX] = ' ';
         m_PlayerX = newX;
         m_PlayerY = newY;
         m_Level[m_PlayerY][m_PlayerX] = '@';
     }
-    else if (m_Level[newY][newX] == '$')
+    // 推动箱子
+    else if (targetTile == '$')
     {
-        int newBoxX = newX + dx;
-        int newBoxY = newY + dy;
+        int boxNewX = newX + dx;
+        int boxNewY = newY + dy;
 
-        if (m_Level[newBoxY][newBoxX] == ' ' || m_Level[newBoxY][newBoxX] == '.')
+        // 检查箱子目标位置是否合法
+        if (boxNewX < 0 || boxNewY < 0 || boxNewY >= m_Level.size() || boxNewX >= m_Level[boxNewY].size())
         {
+            return;
+        }
+
+        char boxTargetTile = m_Level[boxNewY][boxNewX];
+        if (boxTargetTile == ' ' || boxTargetTile == '.')
+        {
+            // 移动玩家
             m_Level[m_PlayerY][m_PlayerX] = ' ';
             m_PlayerX = newX;
             m_PlayerY = newY;
             m_Level[m_PlayerY][m_PlayerX] = '@';
-            m_Level[newBoxY][newBoxX] = '$';
+
+            // 移动箱子
+            m_Level[boxNewY][boxNewX] = '$';
+            // m_Level[newY][newX] = ' ';
         }
     }
 }
-
 bool Game::IsLevelComplete()
 {
     for (const auto &row : m_Level)
