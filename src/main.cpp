@@ -21,7 +21,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // 创建窗口
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "推箱子游戏", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, std::string("SokobanGame").c_str(), NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -53,9 +53,11 @@ int main()
     // 初始化游戏
     Game game(SCR_WIDTH, SCR_HEIGHT, window);
 
+    size_t ii=0;
     // 渲染循环
     while (!glfwWindowShouldClose(window))
     {
+        ii++;
         // 输入处理
         processInput(window);
 

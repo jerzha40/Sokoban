@@ -13,6 +13,39 @@
                 "CMAKE_CXX_COMPILER": "E:/workspace-programming/c-environment/x86_64-13.2.0-release-posix-seh-ucrt-rt_v11-rev1/mingw64/bin/g++.exe",
                 "CMAKE_BUILD_TYPE": "Debug"
             }
+        },
+        {
+            "name": "VS2022",
+            "displayName": "Visual Studio 2022",
+            "description": "Using Visual Studio 2022 as the generator",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "20"
+            }
+        },
+        {
+            "name": "VS2022-x86",
+            "displayName": "Visual Studio 2022 (x86)",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "Win32",
+            "binaryDir": "${sourceDir}/build/out/build/VS2022-x86",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "20"
+            }
+        },
+        {
+            "name": "VS2022-x64",
+            "displayName": "Visual Studio 2022 (x64)",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "binaryDir": "${sourceDir}/build/out/build/VS2022-x64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "20"
+            }
         }
     ]
 }
