@@ -28,16 +28,15 @@ int main()
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    glfwMakeContextCurrent(window);
     GladGLContext *gl;
     gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
     if (!gl)
     {
         throw std::invalid_argument("Failed to create context");
     }
-
     int version = gladLoadGLContext(gl, glfwGetProcAddress);
     std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
 
@@ -134,8 +133,8 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
     {
         throw std::invalid_argument("Failed to create context");
     }
-
     int version = gladLoadGLContext(gl, glfwGetProcAddress);
     std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
+
     gl->Viewport(0, 0, width, height);
 }
