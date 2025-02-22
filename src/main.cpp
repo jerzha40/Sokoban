@@ -45,42 +45,68 @@ int main()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    (void)io;
-    ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 130");
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // IF using Docking Branch
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true); // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplOpenGL3_Init();
 
     // 初始化游戏
     Game game(SCR_WIDTH, SCR_HEIGHT, window);
 
-    size_t ii=0;
     // 渲染循环
     while (!glfwWindowShouldClose(window))
     {
-        ii++;
         // 输入处理
+        glfwPollEvents();
         processInput(window);
+
+        // 开始ImGui帧（必须在游戏渲染前）
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
         // 清除颜色缓冲
         gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         gl->Clear(GL_COLOR_BUFFER_BIT);
 
-        // 开始ImGui帧
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
         // 渲染游戏
         game.Update();
         game.Render();
 
-        // 渲染ImGui
+        // 添加ImGui控件
+        {
+            ImGui::Begin("Level Selection");
+            ImGui::Text("Current Level: %d", game.GetCurrentLevel());
+            if (ImGui::Button("Previous Level"))
+            {
+                game.LoadLevel(game.GetCurrentLevel() - 1);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("NextLevel"))
+            {
+                game.LoadLevel(game.GetCurrentLevel() + 1);
+            }
+            ImGui::End();
+        }
+
+        // 提交ImGui渲染
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // 交换缓冲区和轮询IO事件
+        // 交换缓冲区
         glfwSwapBuffers(window);
-        glfwPollEvents();
+        // Update and Render additional Platform Windows
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            // TODO for OpenGL: restore current GL context.
+            glfwMakeContextCurrent(window);
+        }
     }
 
     // 清理ImGui

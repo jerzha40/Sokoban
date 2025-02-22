@@ -12,8 +12,13 @@ public:
 
     void Update();
     void Render();
+    void LoadLevel(int levelIndex); // 修改为可指定关卡
+    int GetCurrentLevel() const { return m_CurrentLevel; }
 
 private:
+    std::vector<std::vector<std::string>> m_Levels; // 所有关卡数据
+    int m_CurrentLevel = 0;                         // 当前关卡索引
+
     Renderer *m_Renderer; // 添加成员变量
     int m_Width, m_Height;
     GLFWwindow *window;
@@ -27,7 +32,6 @@ private:
     std::vector<std::string> m_Level;
     int m_PlayerX, m_PlayerY;
 
-    void LoadLevel();
     void MovePlayer(int dx, int dy);
     bool IsLevelComplete();
 };

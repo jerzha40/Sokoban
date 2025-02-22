@@ -3,8 +3,29 @@
 
 Game::Game(int width, int height, GLFWwindow *window) : m_Width(width), m_Height(height), window(window)
 {
+    m_Levels = {
+        {// Level 0
+         "#######",
+         "#     #",
+         "#  $  #",
+         "#  @  #",
+         "#  .  #",
+         "#     #",
+         "#######"},
+        {// Level 1
+         "########",
+         "#.  @  #",
+         "# $$   #",
+         "#      #",
+         "########"},
+        {// Level 2 (更复杂的关卡)
+         "##########",
+         "#.$ #  @ #",
+         "#   $   $#",
+         "##########"}};
+
+    LoadLevel(0); // 加载第一关
     m_Renderer = new Renderer(width, height, window);
-    LoadLevel();
 }
 
 Game::~Game()
@@ -12,16 +33,11 @@ Game::~Game()
     delete m_Renderer;
 }
 
-void Game::LoadLevel()
+void Game::LoadLevel(int levelIndex)
 {
-    m_Level = {
-        "#######",
-        "#     #",
-        "#  $  #",
-        "#  @  #",
-        "#  .  #",
-        "#     #",
-        "#######"};
+    m_CurrentLevel = levelIndex % m_Levels.size(); // 循环关卡
+
+    m_Level = m_Levels[m_CurrentLevel];
 
     for (int y = 0; y < m_Level.size(); ++y)
     {
