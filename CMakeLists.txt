@@ -20,6 +20,8 @@ set(backends
     ${PROJECT_SOURCE_DIR}/deps/imgui/backends/imgui_impl_opengl3.cpp
 )
 
+include_directories(${PROJECT_SOURCE_DIR}/deps/stb/)
+include_directories(${PROJECT_SOURCE_DIR}/deps/entt/src/)
 include_directories(${PROJECT_SOURCE_DIR}/src/)
 include_directories(${PROJECT_SOURCE_DIR}/deps/glm/)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/ SokobanSRC)

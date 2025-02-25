@@ -1,8 +1,9 @@
-#include "game.h"
+#include <game.h>
 #include <iostream>
 
 Game::Game(int width, int height, GLFWwindow *window) : m_Width(width), m_Height(height), window(window)
 {
+
     m_Levels = {
         {// Level 0
          "#######",
@@ -26,6 +27,11 @@ Game::Game(int width, int height, GLFWwindow *window) : m_Width(width), m_Height
 
     LoadLevel(0); // 加载第一关
     m_Renderer = new Renderer(width, height, window);
+
+    m_Renderer->loadTexture("wall", "artAssets/2647570.jpeg");
+    m_Renderer->loadTexture("crate", "artAssets/icon1.png");
+    m_Renderer->loadTexture("target", "artAssets/icon2.png");
+    m_Renderer->loadTexture("player", "artAssets/246139_8_sq.png");
 }
 
 Game::~Game()
@@ -112,16 +118,16 @@ void Game::Render()
             switch (m_Level[y][x])
             {
             case '#': // 墙
-                m_Renderer->DrawQuad(pos, size, glm::vec3(0.5f, 0.5f, 0.5f));
+                m_Renderer->DrawQuad(pos, size, "wall", glm::vec3(1.0f, 1.0f, 1.0f));
                 break;
             case '@': // 玩家
-                m_Renderer->DrawQuad(pos, size, glm::vec3(0.0f, 0.0f, 1.0f));
+                m_Renderer->DrawQuad(pos, size, "player", glm::vec3(0.8f, 0.8f, 1.0f));
                 break;
             case '$': // 箱子
-                m_Renderer->DrawQuad(pos, size, glm::vec3(0.6f, 0.3f, 0.2f));
+                m_Renderer->DrawQuad(pos, size, "crate", glm::vec3(0.9f, 0.9f, 0.9f));
                 break;
             case '.': // 目标点
-                m_Renderer->DrawQuad(pos, size, glm::vec3(1.0f, 0.0f, 0.0f));
+                m_Renderer->DrawQuad(pos, size, "target", glm::vec3(1.0f, 0.5f, 0.5f));
                 break;
             }
         }

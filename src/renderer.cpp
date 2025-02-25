@@ -2,24 +2,42 @@
 #include <iostream>
 
 const char *vertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec2 aPos;
-    uniform mat4 projection;
-    uniform mat4 model; // 添加 model 矩阵
-    void main()
-    {
-        gl_Position = projection * model * vec4(aPos, 0.0, 1.0); // 应用 model 矩阵
-    }
+#version 330 core
+layout (location = 0) in vec2 aPos;
+layout (location = 1) in vec2 aUV;
+
+uniform mat4 projection;
+uniform mat4 model;
+
+out vec2 uv;
+
+void main() {
+    gl_Position = projection * model * vec4(aPos, 0.0, 1.0);
+    uv = aUV;
+}
 )";
 const char *fragmentShaderSource = R"(
-    #version 330 core
-    out vec4 FragColor;
-    uniform vec3 color;
-    void main()
-    {
-        FragColor = vec4(color, 1.0);
-    }
+#version 330 core
+out vec4 FragColor;
+
+in vec2 uv;
+uniform sampler2D texture_diffuse;
+uniform vec3 colorTint; // 可选的颜色混合
+
+void main() {
+    FragColor = texture(texture_diffuse, uv) * vec4(colorTint, 1.0);
+}
 )";
+// renderer.cpp
+void Renderer::loadTexture(const std::string &name, const std::string &path)
+{
+    m_Textures[name] = new Texture(path, window);
+}
+
+Texture *Renderer::getTexture(const std::string &name)
+{
+    return m_Textures.at(name);
+}
 
 Renderer::Renderer(int windowWidth, int windowHeight, GLFWwindow *window)
     : m_WindowWidth(windowWidth), m_WindowHeight(windowHeight), window(window)
@@ -99,12 +117,13 @@ void Renderer::InitShader()
 
 void Renderer::InitVertexData()
 {
-    // 四边形顶点数据（将被实例化）
     float vertices[] = {
-        -0.5f, -0.5f,
-        0.5f, -0.5f,
-        0.5f, 0.5f,
-        -0.5f, 0.5f};
+        // 位置       // UV坐标
+        -0.5f, -0.5f, 0.0f, 1.0f, // 左下
+        0.5f, -0.5f, 1.0f, 1.0f,  // 右下
+        0.5f, 0.5f, 1.0f, 0.0f,   // 右上
+        -0.5f, 0.5f, 0.0f, 0.0f   // 左上
+    };
 
     gl->GenVertexArrays(1, &m_VAO);
     gl->GenBuffers(1, &m_VBO);
@@ -113,8 +132,11 @@ void Renderer::InitVertexData()
     gl->BindBuffer(GL_ARRAY_BUFFER, m_VBO);
     gl->BufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    gl->VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+    // 更新顶点属性指针
+    gl->VertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
     gl->EnableVertexAttribArray(0);
+    gl->VertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    gl->EnableVertexAttribArray(1);
 
     gl->BindBuffer(GL_ARRAY_BUFFER, 0);
     gl->BindVertexArray(0);
@@ -145,17 +167,28 @@ void Renderer::EndBatch()
     gl->BindVertexArray(0);
 }
 
-void Renderer::DrawQuad(const glm::vec2 &position, const glm::vec2 &size, const glm::vec3 &color)
+void Renderer::DrawQuad(const glm::vec2 &position,
+                        const glm::vec2 &size,
+                        const std::string &textureName,
+                        const glm::vec3 &colorTint)
 {
-    // 计算模型矩阵
+    // 绑定纹理
+    Texture *tex = getTexture(textureName);
+    tex->bind(0);
+
+    // 设置着色器参数
+    GLint tintLoc = gl->GetUniformLocation(m_ShaderProgram, "colorTint");
+    gl->Uniform3fv(tintLoc, 1, &colorTint[0]);
+
+    // 原有模型矩阵计算
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(position, 0.0f));
     model = glm::scale(model, glm::vec3(size, 1.0f));
 
+    // 提交绘制命令
+    // ...（同之前EndBatch逻辑）
     // 设置颜色和变换
-    gl->Uniform3fv(gl->GetUniformLocation(m_ShaderProgram, "color"), 1, &color[0]);
     gl->UniformMatrix4fv(gl->GetUniformLocation(m_ShaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
-
     // 绘制
     EndBatch(); // 实际提交绘制命令
 }
