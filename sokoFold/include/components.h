@@ -30,5 +30,17 @@ namespace components
         std::vector<std::string> levelData;
         int currentLevel = 0;
     };
+    struct Box
+    {
+        /* data */
+    };
+    struct Wall
+    {
+        /* data */
+    };
+    struct Goal
+    {
+        /* data */
+    };
 } // namespace components
 #endif
