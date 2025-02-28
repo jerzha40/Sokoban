@@ -234,8 +234,40 @@ std::vector<std::vector<std::string>> levels = {{// Level 0
                                                  "##########"}};
 void LoadLevelData(entt::registry &registry, int levelIndex)
 {
+    auto playerView = registry.view<components::Player>();
+    for (auto entity : playerView)
+    {
+        registry.destroy(entity);
+    }
+
+    auto boxView = registry.view<components::Box>();
+    for (auto entity : boxView)
+    {
+        registry.destroy(entity);
+    }
+
+    auto goalView = registry.view<components::Goal>();
+    for (auto entity : goalView)
+    {
+        registry.destroy(entity);
+    }
+
+    auto wallView = registry.view<components::Wall>();
+    for (auto entity : wallView)
+    {
+        registry.destroy(entity);
+    }
+    auto bgView = registry.view<components::Background>();
+    for (auto entity : bgView)
+    {
+        registry.destroy(entity);
+    }
     // 清空所有旧实体
-    registry.clear();
+    auto view = registry.view<components::Level>();
+    for (auto entity : view)
+    {
+        registry.remove<components::Level>(entity); // 移除之前的关卡数据
+    }
 
     auto levelEntity = registry.create();
     registry.emplace<components::Level>(levelEntity, levels[levelIndex]);
@@ -281,6 +313,12 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             }
         }
     }
+    // load background
+    auto backgroundEntity = registry.create();
+    registry.emplace<components::Transform>(backgroundEntity, glm::vec2(400.0f, 300.0f), glm::vec2(800.0f, 600.0f));
+    registry.emplace<components::Render>(backgroundEntity, "background");
+    registry.emplace<components::Background>(backgroundEntity);
+    //^
 }
 #include <set>
 // 检查是否所有目标点 `.` 上都有箱子 `$`
@@ -329,6 +367,60 @@ bool CheckLevelComplete(entt::registry &registry)
     }
     return false;
 }
+void HandleMenuInput(entt::registry &registry, GLFWwindow *window)
+{
+    auto gameView = registry.view<components::Game>();
+    for (auto entity : gameView)
+    {
+        auto &game = gameView.get<components::Game>(entity);
+
+        static bool lastUp = false, lastDown = false, lastEnter = false;
+
+        bool currentUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
+        bool currentDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
+        bool currentEnter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
+
+        if (currentUp && !lastUp)
+        {
+            game.selectedLevel = (game.selectedLevel - 1 + levels.size()) % levels.size();
+        }
+        if (currentDown && !lastDown)
+        {
+            game.selectedLevel = (game.selectedLevel + 1) % levels.size();
+        }
+        if (currentEnter && !lastEnter)
+        {
+            game.state = components::GameState::Playing;
+            LoadLevelData(registry, game.selectedLevel);
+        }
+
+        lastUp = currentUp;
+        lastDown = currentDown;
+        lastEnter = currentEnter;
+    }
+}
+void RenderMenu(entt::registry &registry, Renderer &renderer)
+{
+    auto gameView = registry.view<components::Game>();
+    for (auto entity : gameView)
+    {
+        auto &game = gameView.get<components::Game>(entity);
+
+        renderer.BeginBatch();
+
+        // 绘制背景
+        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(800, 600), "background", glm::vec3(1.0f));
+
+        // 绘制关卡按钮
+        for (int i = 0; i < levels.size(); i++)
+        {
+            glm::vec3 color = (i == game.selectedLevel) ? glm::vec3(1.0f, 0.5f, 0.5f) : glm::vec3(1.0f);
+            renderer.DrawQuad(glm::vec2(400, 200 + i * 50), glm::vec2(200, 40), "button", color);
+        }
+
+        renderer.EndBatch();
+    }
+}
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -361,6 +453,7 @@ int main()
     renderer.loadTexture("goal", "artAssets/icon2.png");
     renderer.loadTexture("player", "artAssets/246139_8_sq.png");
     renderer.loadTexture("background", "artAssets/bb3c7316dd9515f1f8de28c9b2016cd.jpg");
+    renderer.loadTexture("button", "artAssets/icon1.png");
 
     GladGLContext *gl;
     gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
@@ -374,16 +467,8 @@ int main()
     gl->Enable(GL_BLEND);
     gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    auto levelEntity = registry.create();
-    registry.emplace<components::Level>(levelEntity);
-
-    LoadLevelData(registry, 0);
-    // load background
-    auto backgroundEntity = registry.create();
-    registry.emplace<components::Transform>(backgroundEntity, glm::vec2(400.0f, 300.0f), glm::vec2(800.0f, 600.0f));
-    registry.emplace<components::Render>(backgroundEntity, "background");
-    registry.emplace<components::Background>(backgroundEntity);
-    //^
+    auto gameEntity = registry.create();
+    registry.emplace<components::Game>(gameEntity);
     const std::chrono::milliseconds dt(100); // 100ms = 0.1秒
 
     while (!glfwWindowShouldClose(window))
@@ -392,41 +477,39 @@ int main()
 
         // 处理输入
         glfwPollEvents();
-        MovementSystem(registry, window);
 
-        // **清除 OpenGL 画面**
-        gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        gl->Clear(GL_COLOR_BUFFER_BIT);
-
-        // **调用渲染系统**
-        RenderSystem(registry, renderer);
-
-        // **交换缓冲区，显示画面**
-        glfwSwapBuffers(window);
-
-        // **终端渲染**
-        TerminalRenderSystem(registry);
-
-        // **检测是否过关**
-        if (CheckLevelComplete(registry))
+        auto gameView = registry.view<components::Game>();
+        for (auto entity : gameView)
         {
-            std::cout << "Level " << currentLevel + 1 << " fin!" << std::endl;
+            auto &game = gameView.get<components::Game>(entity);
 
-            currentLevel++;
-            if (currentLevel >= levels.size())
+            if (game.state == components::GameState::Menu)
             {
-                std::cout << "Congratulation! You have done all the levels!" << std::endl;
-                break;
+                // 处理选关界面
+                HandleMenuInput(registry, window);
+                RenderMenu(registry, renderer);
             }
-            else
+            else if (game.state == components::GameState::Playing)
             {
-                std::cout << "Level " << currentLevel + 1 << " loading..." << std::endl;
-                LoadLevelData(registry, currentLevel);
+                // 游戏逻辑
+                MovementSystem(registry, window);
+                // **清除 OpenGL 画面**
+                gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+                gl->Clear(GL_COLOR_BUFFER_BIT);
+                RenderSystem(registry, renderer);
+                // **终端渲染**
+                TerminalRenderSystem(registry);
+
+                // 过关检测
+                if (CheckLevelComplete(registry))
+                {
+                    std::cout << "🎉 Level " << game.selectedLevel + 1 << " finish!" << std::endl;
+                    game.state = components::GameState::Menu; // 返回选关界面
+                }
             }
         }
-
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // clearScreen();
+        glfwSwapBuffers(window);
     }
 
     glfwDestroyWindow(window);

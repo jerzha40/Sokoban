@@ -5,6 +5,16 @@
 #include <vector>
 namespace components
 {
+    enum class GameState
+    {
+        Menu,   // 选关菜单
+        Playing // 游戏进行中
+    };
+    struct Game
+    {
+        GameState state = GameState::Menu; // 游戏默认进入选关界面
+        int selectedLevel = 0;             // 当前选中的关卡
+    };
     struct Transform
     {
         glm::vec2 position;
