@@ -360,6 +360,7 @@ int main()
     renderer.loadTexture("crate", "artAssets/icon1.png");
     renderer.loadTexture("goal", "artAssets/icon2.png");
     renderer.loadTexture("player", "artAssets/246139_8_sq.png");
+    renderer.loadTexture("background", "artAssets/bb3c7316dd9515f1f8de28c9b2016cd.jpg");
 
     GladGLContext *gl;
     gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
@@ -377,6 +378,12 @@ int main()
     registry.emplace<components::Level>(levelEntity);
 
     LoadLevelData(registry, 0);
+    // load background
+    auto backgroundEntity = registry.create();
+    registry.emplace<components::Transform>(backgroundEntity, glm::vec2(400.0f, 300.0f), glm::vec2(800.0f, 600.0f));
+    registry.emplace<components::Render>(backgroundEntity, "background");
+    registry.emplace<components::Background>(backgroundEntity);
+    //^
     const std::chrono::milliseconds dt(100); // 100ms = 0.1秒
 
     while (!glfwWindowShouldClose(window))
