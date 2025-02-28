@@ -32,6 +32,10 @@ void main() {
 void Renderer::loadTexture(const std::string &name, const std::string &path)
 {
     m_Textures[name] = new Texture(path, window);
+    if (!m_Textures[name])
+    {
+        std::cout << "cant load:" << path << std::endl;
+    }
 }
 
 Texture *Renderer::getTexture(const std::string &name)
@@ -190,5 +194,5 @@ void Renderer::DrawQuad(const glm::vec2 &position,
     // 设置颜色和变换
     gl->UniformMatrix4fv(gl->GetUniformLocation(m_ShaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
     // 绘制
-    // EndBatch(); // 实际提交绘制命令
+    EndBatch(); // 实际提交绘制命令
 }

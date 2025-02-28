@@ -42,5 +42,9 @@ namespace components
     {
         /* data */
     };
+    struct Background
+    {
+        /* data */
+    };
 } // namespace components
 #endif

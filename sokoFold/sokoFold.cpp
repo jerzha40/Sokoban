@@ -107,8 +107,11 @@ void MovementSystem(entt::registry &registry, GLFWwindow *window)
     }
 }
 #include <renderer.h>
+#include <format>
+#include <iostream>
 void RenderSystem(entt::registry &registry, Renderer &renderer)
 {
+    renderer.BeginBatch();
     auto view = registry.view<components::Transform, components::Render>();
 
     for (auto entity : view)
@@ -121,8 +124,10 @@ void RenderSystem(entt::registry &registry, Renderer &renderer)
         glm::vec2 size = transform.size;
 
         // 绘制物体
+        // std::cout << std::format("dfsdfsad_{}\n", render.textureName);
         renderer.DrawQuad(position, size, render.textureName, render.colorTint);
     }
+    // renderer.EndBatch();
 }
 #include <iostream>
 #include <format>
@@ -246,32 +251,32 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             {
                 // 玩家
                 auto playerEntity = registry.create();
-                registry.emplace<components::Transform>(playerEntity, glm::vec2(x * 50.0f, y * 50.0f), glm::vec2(50.0f, 50.0f));
-                registry.emplace<components::Render>(playerEntity, "playerTexture.png");
+                registry.emplace<components::Transform>(playerEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 50.0f));
+                registry.emplace<components::Render>(playerEntity, "player");
                 registry.emplace<components::Player>(playerEntity);
             }
             else if (tile == '#')
             {
                 // **墙壁**
                 auto wallEntity = registry.create();
-                registry.emplace<components::Transform>(wallEntity, glm::vec2(x * 50.0f, y * 50.0f), glm::vec2(50.0f, 50.0f));
-                registry.emplace<components::Render>(wallEntity, "wallTexture.png");
+                registry.emplace<components::Transform>(wallEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 50.0f));
+                registry.emplace<components::Render>(wallEntity, "wall");
                 registry.emplace<components::Wall>(wallEntity); // ✅ **正确创建墙壁**
             }
             else if (tile == '$')
             {
                 // 箱子
                 auto boxEntity = registry.create();
-                registry.emplace<components::Transform>(boxEntity, glm::vec2(x * 50.0f, y * 50.0f), glm::vec2(50.0f, 50.0f));
-                registry.emplace<components::Render>(boxEntity, "crateTexture.png");
+                registry.emplace<components::Transform>(boxEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 50.0f));
+                registry.emplace<components::Render>(boxEntity, "crate");
                 registry.emplace<components::Box>(boxEntity);
             }
             else if (tile == '.')
             {
                 // 目标点
                 auto goalEntity = registry.create();
-                registry.emplace<components::Transform>(goalEntity, glm::vec2(x * 50.0f, y * 50.0f), glm::vec2(50.0f, 50.0f));
-                registry.emplace<components::Render>(goalEntity, "goalTexture.png");
+                registry.emplace<components::Transform>(goalEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 50.0f));
+                registry.emplace<components::Render>(goalEntity, "goal");
                 registry.emplace<components::Goal>(goalEntity);
             }
         }
@@ -327,26 +332,46 @@ bool CheckLevelComplete(entt::registry &registry)
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <renderer.h>
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 int main()
 {
     entt::registry registry;
     int currentLevel = 0;
 
-    // 初始化GLFW
+    // 初始化 GLFW
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // 创建窗口
-    GLFWwindow *window = glfwCreateWindow(100, 100, std::string("SokobanGame").c_str(), NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(800, 600, std::string("SokobanGame").c_str(), NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwMakeContextCurrent(window);
+    Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
+    renderer.loadTexture("wall", "artAssets/2647570.png");
+    renderer.loadTexture("crate", "artAssets/icon1.png");
+    renderer.loadTexture("goal", "artAssets/icon2.png");
+    renderer.loadTexture("player", "artAssets/246139_8_sq.png");
+
+    GladGLContext *gl;
+    gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
+    if (!gl)
+    {
+        throw std::invalid_argument("Failed to create context");
+    }
+    int version = gladLoadGLContext(gl, glfwGetProcAddress);
+    std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
+    gl->Viewport(0, 0, 800, 600);
+    gl->Enable(GL_BLEND);
+    gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     auto levelEntity = registry.create();
     registry.emplace<components::Level>(levelEntity);
@@ -358,37 +383,60 @@ int main()
     {
         auto start = std::chrono::steady_clock::now();
 
+        // 处理输入
         glfwPollEvents();
-        // 处理玩家移动
         MovementSystem(registry, window);
 
-        // 终端渲染
+        // **清除 OpenGL 画面**
+        gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        gl->Clear(GL_COLOR_BUFFER_BIT);
+
+        // **调用渲染系统**
+        RenderSystem(registry, renderer);
+
+        // **交换缓冲区，显示画面**
+        glfwSwapBuffers(window);
+
+        // **终端渲染**
         TerminalRenderSystem(registry);
 
         // **检测是否过关**
         if (CheckLevelComplete(registry))
         {
-            std::cout << "Level" << currentLevel + 1 << " fin!" << std::endl;
+            std::cout << "Level " << currentLevel + 1 << " fin!" << std::endl;
 
-            // 切换到下一关
             currentLevel++;
             if (currentLevel >= levels.size())
             {
-                std::cout << "congradulation you have done all the levels" << std::endl;
+                std::cout << "Congratulation! You have done all the levels!" << std::endl;
                 break;
             }
             else
             {
-                std::cout << "level " << currentLevel + 1 << " loading..." << std::endl;
+                std::cout << "Level " << currentLevel + 1 << " loading..." << std::endl;
                 LoadLevelData(registry, currentLevel);
             }
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        clearScreen();
+        // clearScreen();
     }
 
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
+}
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+    glfwMakeContextCurrent(window);
+    GladGLContext *gl;
+    gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
+    if (!gl)
+    {
+        throw std::invalid_argument("Failed to create context");
+    }
+    int version = gladLoadGLContext(gl, glfwGetProcAddress);
+    std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
+
+    gl->Viewport(0, 0, width, height);
 }
