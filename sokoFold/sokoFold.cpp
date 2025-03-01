@@ -448,6 +448,8 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwMakeContextCurrent(window);
     Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
+
+    // 载入纹理
     renderer.loadTexture("wall", "artAssets/2647570.png");
     renderer.loadTexture("crate", "artAssets/icon1.png");
     renderer.loadTexture("goal", "artAssets/icon2.png");
@@ -455,6 +457,7 @@ int main()
     renderer.loadTexture("background", "artAssets/bb3c7316dd9515f1f8de28c9b2016cd.jpg");
     renderer.loadTexture("button", "artAssets/icon1.png");
 
+    // 初始化 OpenGL
     GladGLContext *gl;
     gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
     if (!gl)
@@ -467,13 +470,35 @@ int main()
     gl->Enable(GL_BLEND);
     gl->BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // 初始化游戏状态
     auto gameEntity = registry.create();
     registry.emplace<components::Game>(gameEntity);
-    const std::chrono::milliseconds dt(100); // 100ms = 0.1秒
+
+    // FPS 计时变量
+    auto lastTime = std::chrono::high_resolution_clock::now();
+    int frameCount = 0;
 
     while (!glfwWindowShouldClose(window))
     {
-        auto start = std::chrono::steady_clock::now();
+        // **计算 deltaTime**
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
+        lastTime = currentTime;
+
+        // 计算 FPS
+        static double lastFpsUpdateTime = glfwGetTime();
+        static int fps = 0;
+        frameCount++;
+        if (glfwGetTime() - lastFpsUpdateTime >= 1.0) // 每秒更新一次
+        {
+            fps = frameCount;
+            frameCount = 0;
+            lastFpsUpdateTime = glfwGetTime();
+
+            // **更新窗口标题**
+            std::string newTitle = "SokobanGame - FPS: " + std::to_string(fps);
+            glfwSetWindowTitle(window, newTitle.c_str());
+        }
 
         // 处理输入
         glfwPollEvents();
@@ -508,7 +533,6 @@ int main()
                 }
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         glfwSwapBuffers(window);
     }
 
