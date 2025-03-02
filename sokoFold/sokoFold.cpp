@@ -106,10 +106,10 @@ void MovementSystem(entt::registry &registry, GLFWwindow *window)
         }
     }
 }
-#include <renderer.h>
+#include <sokoFold_renderer.h>
 #include <format>
 #include <iostream>
-void RenderSystem(entt::registry &registry, Renderer &renderer)
+void RenderSystem(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 {
     renderer.BeginBatch();
     auto view = registry.view<components::Transform, components::Render>();
@@ -272,6 +272,13 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
     auto levelEntity = registry.create();
     registry.emplace<components::Level>(levelEntity, levels[levelIndex]);
 
+    // load background
+    auto purewhite = registry.create();
+    registry.emplace<components::Transform>(purewhite, glm::vec2(400.0f, 300.0f), glm::vec2(400.0f, 300.0f));
+    registry.emplace<components::Render>(purewhite, "white", glm::vec4(1.0f, 1.0f, 1.0f, 0.5f));
+    registry.emplace<components::Background>(purewhite);
+    //^
+
     // 遍历地图并创建对应的实体
     for (int y = 0; y < levels[levelIndex].size(); ++y)
     {
@@ -399,7 +406,7 @@ void HandleMenuInput(entt::registry &registry, GLFWwindow *window)
         lastEnter = currentEnter;
     }
 }
-void RenderMenu(entt::registry &registry, Renderer &renderer)
+void RenderMenu(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 {
     auto gameView = registry.view<components::Game>();
     for (auto entity : gameView)
@@ -409,12 +416,12 @@ void RenderMenu(entt::registry &registry, Renderer &renderer)
         renderer.BeginBatch();
 
         // 绘制背景
-        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(800, 600), "background", glm::vec3(1.0f));
+        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(800, 600), "background", glm::vec4(1.0f));
 
         // 绘制关卡按钮
         for (int i = 0; i < levels.size(); i++)
         {
-            glm::vec3 color = (i == game.selectedLevel) ? glm::vec3(1.0f, 0.5f, 0.5f) : glm::vec3(1.0f);
+            glm::vec4 color = (i == game.selectedLevel) ? glm::vec4(1.0f, 0.5f, 0.5f, 1.0f) : glm::vec4(1.0f);
             renderer.DrawQuad(glm::vec2(400, 200 + i * 50), glm::vec2(200, 40), "button", color);
         }
 
@@ -424,7 +431,7 @@ void RenderMenu(entt::registry &registry, Renderer &renderer)
 #include <iostream>
 #include <chrono>
 #include <thread>
-#include <renderer.h>
+#include <sokoFold_renderer.h>
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 int main()
 {
@@ -447,7 +454,7 @@ int main()
     }
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwMakeContextCurrent(window);
-    Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
+    sokoFold_renderer::Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
 
     // 载入纹理
     renderer.loadTexture("wall", "artAssets/2647570.png");
@@ -456,6 +463,7 @@ int main()
     renderer.loadTexture("player", "artAssets/246139_8_sq.png");
     renderer.loadTexture("background", "artAssets/bb3c7316dd9515f1f8de28c9b2016cd.jpg");
     renderer.loadTexture("button", "artAssets/icon1.png");
+    renderer.loadTexture("white", "artAssets/white.png");
 
     // 初始化 OpenGL
     GladGLContext *gl;
@@ -523,7 +531,7 @@ int main()
                 gl->Clear(GL_COLOR_BUFFER_BIT);
                 RenderSystem(registry, renderer);
                 // **终端渲染**
-                TerminalRenderSystem(registry);
+                // TerminalRenderSystem(registry);
 
                 // 过关检测
                 if (CheckLevelComplete(registry))

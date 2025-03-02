@@ -24,7 +24,7 @@ namespace components
     struct Render
     {
         std::string textureName;
-        glm::vec3 colorTint = glm::vec3(1.0f); // 可选的颜色调色
+        glm::vec4 colorTint = glm::vec4(1.0f); // 可选的颜色调色
     };
     struct Player
     {
