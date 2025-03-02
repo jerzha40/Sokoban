@@ -433,6 +433,7 @@ void RenderMenu(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 #include <thread>
 #include <sokoFold_renderer.h>
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+sokoFold_renderer::Renderer *RENDERER;
 int main()
 {
     entt::registry registry;
@@ -455,6 +456,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwMakeContextCurrent(window);
     sokoFold_renderer::Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
+    RENDERER = &renderer;
 
     // 载入纹理
     renderer.loadTexture("wall", "artAssets/2647570.png");
@@ -561,4 +563,5 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
     std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
 
     gl->Viewport(0, 0, width, height);
+    RENDERER->SetProjection(width, height);
 }
