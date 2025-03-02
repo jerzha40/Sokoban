@@ -290,7 +290,7 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             {
                 // 玩家
                 auto playerEntity = registry.create();
-                registry.emplace<components::Transform>(playerEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 50.0f));
+                registry.emplace<components::Transform>(playerEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 97.0f));
                 registry.emplace<components::Render>(playerEntity, "player");
                 registry.emplace<components::Player>(playerEntity);
             }
@@ -416,12 +416,12 @@ void RenderMenu(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
         renderer.BeginBatch();
 
         // 绘制背景
-        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(800, 600), "background", glm::vec4(1.0f));
+        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(800, 600), "white", glm::vec4(1.0f));
 
         // 绘制关卡按钮
         for (int i = 0; i < levels.size(); i++)
         {
-            glm::vec4 color = (i == game.selectedLevel) ? glm::vec4(1.0f, 0.5f, 0.5f, 1.0f) : glm::vec4(1.0f);
+            glm::vec4 color = (i == game.selectedLevel) ? glm::vec4(1.0f, 0.5f, 0.5f, i * 0.5f + 0.1f) : glm::vec4(1.0f);
             renderer.DrawQuad(glm::vec2(400, 200 + i * 50), glm::vec2(200, 40), "button", color);
         }
 
@@ -462,7 +462,7 @@ int main()
     renderer.loadTexture("wall", "artAssets/2647570.png");
     renderer.loadTexture("crate", "artAssets/icon1.png");
     renderer.loadTexture("goal", "artAssets/icon2.png");
-    renderer.loadTexture("player", "artAssets/246139_8_sq.png");
+    renderer.loadTexture("player", "artAssets/tile000.png");
     renderer.loadTexture("background", "artAssets/bb3c7316dd9515f1f8de28c9b2016cd.jpg");
     renderer.loadTexture("button", "artAssets/icon1.png");
     renderer.loadTexture("white", "artAssets/white.png");
