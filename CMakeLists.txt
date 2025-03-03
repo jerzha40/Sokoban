@@ -16,7 +16,7 @@ include_directories(${PROJECT_SOURCE_DIR}/deps/imgui/)
 include_directories(${PROJECT_SOURCE_DIR}/deps/imgui/backends)
 aux_source_directory(${PROJECT_SOURCE_DIR}/deps/imgui/ imghcpp)
 set(backends
-    ${PROJECT_SOURCE_DIR}/deps/imgui/backends/imgui_impl_glfw.cpp
+    ${PROJECT_SOURCE_DIR}/deps/imgui/backends/imgui_impl_sdl.cpp
     ${PROJECT_SOURCE_DIR}/deps/imgui/backends/imgui_impl_opengl3.cpp
 )
 
