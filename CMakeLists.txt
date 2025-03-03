@@ -10,6 +10,8 @@ message("PROJECT_SOURCE_DIR\t${PROJECT_SOURCE_DIR}")
 message("CMAKE_SOURCE_DIR\t${CMAKE_SOURCE_DIR}")
 
 add_subdirectory(deps)
+add_subdirectory(SokoBanSDL3)
+# add_subdirectory
 # add_subdirectory(features/topologyMap)
 
 include_directories(${PROJECT_SOURCE_DIR}/deps/imgui/)
@@ -23,6 +25,6 @@ set(backends
 include_directories(${PROJECT_SOURCE_DIR}/src/)
 include_directories(${PROJECT_SOURCE_DIR}/deps/glm/)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/ SokobanSRC)
-add_executable(Sokoban src/main.cpp ${SokobanSRC})
-target_link_libraries(Sokoban glad glfw imgui)
+# add_executable(Sokoban src/main.cpp ${SokobanSRC})
+# target_link_libraries(Sokoban glad glfw imgui)
 
