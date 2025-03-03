@@ -11,6 +11,8 @@ glad_add_library(glad REPRODUCIBLE MX API gl:core=4.3)
 add_subdirectory(glfw)
 include_directories(glfw/include)
 
+add_subdirectory(SDL EXCLUDE_FROM_ALL)
+
 include_directories(${PROJECT_SOURCE_DIR}/imgui/)
 include_directories(${PROJECT_SOURCE_DIR}/imgui/backends)
 aux_source_directory(${PROJECT_SOURCE_DIR}/imgui/ imghcpp)
