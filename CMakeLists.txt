@@ -9,14 +9,19 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s -mwindows")
 message("PROJECT_SOURCE_DIR\t${PROJECT_SOURCE_DIR}")
 message("CMAKE_SOURCE_DIR\t${CMAKE_SOURCE_DIR}")
 
+set(GLAD_SOURCES_DIR "${PROJECT_SOURCE_DIR}/deps/glad")
+add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
+glad_add_library(glad REPRODUCIBLE MX API gl:core=4.3)
+
 # 添加 SDL 子模块
 set(SDL_DIR "${CMAKE_SOURCE_DIR}/deps/SDL")
 add_subdirectory(${SDL_DIR})
 
+include_directories(${PROJECT_SOURCE_DIR})
 # 添加可执行文件
-add_executable(windowWithSDL main.cpp)
-add_executable(test test.cpp)
+add_executable(windowWithSDL SDLsrc/main.cpp SDLsrc/shader.cpp)
+add_executable(test SDLsrc/test.cpp)
 
 # 链接 SDL3
-target_link_libraries(windowWithSDL PRIVATE SDL3::SDL3)
+target_link_libraries(windowWithSDL glad SDL3::SDL3)
 target_link_libraries(test PRIVATE SDL3::SDL3)
