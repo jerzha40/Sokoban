@@ -10,6 +10,8 @@ message("PROJECT_SOURCE_DIR\t${PROJECT_SOURCE_DIR}")
 message("CMAKE_SOURCE_DIR\t${CMAKE_SOURCE_DIR}")
 
 # 添加 SDL 子模块
+set(SDL_SHARED OFF CACHE BOOL "Build SDL as a static library" FORCE)
+set(SDL_STATIC ON CACHE BOOL "Build SDL as a static library" FORCE)
 set(SDL_DIR "${CMAKE_SOURCE_DIR}/deps/SDL")
 add_subdirectory(${SDL_DIR})
 
