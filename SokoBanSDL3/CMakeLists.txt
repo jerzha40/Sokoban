@@ -10,7 +10,7 @@ project(hello)
 # add_subdirectory(SDL )
 
 # Create your game executable target as usual
-add_executable(hello WIN32 hello.c)
+add_executable(hello hello.cpp)
 
 # Link to the actual SDL3 library.
-target_link_libraries(hello PRIVATE SDL3::SDL3)
+target_link_libraries(hello SDL3::SDL3)

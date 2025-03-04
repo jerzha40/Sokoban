@@ -47,12 +47,14 @@ int main(int argc, char *argv[])
     }
 
     // 初始化 glad
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+    GladGLContext *gl;
+    gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
+    if (!gl)
     {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        return -1;
+        throw std::invalid_argument("Failed to create context");
     }
-    std::cout << "Loaded OpenGL version: " << glGetString(GL_VERSION) << std::endl;
+    int version = gladLoadGLContext(gl, glfwGetProcAddress);
+    std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
 
     // 初始化 ImGui
     IMGUI_CHECKVERSION();
