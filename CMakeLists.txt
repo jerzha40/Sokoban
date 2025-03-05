@@ -28,3 +28,4 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/src/ SokobanSRC)
 add_executable(Sokoban src/main.cpp ${SokobanSRC})
 target_link_libraries(Sokoban glad glfw imgui)
 
+add_subdirectory(sokoFold)
