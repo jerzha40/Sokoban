@@ -7,13 +7,15 @@ namespace components
 {
     enum class GameState
     {
-        Menu,   // 选关菜单
-        Playing // 游戏进行中
+        MainMenu,    // 主菜单
+        LevelSelect, // 选关界面
+        Playing      // 游戏中
     };
     struct Game
     {
-        GameState state = GameState::Menu; // 游戏默认进入选关界面
-        int selectedLevel = 0;             // 当前选中的关卡
+        GameState state = GameState::MainMenu; // 初始进入主菜单
+        int selectedLevel = 0;                 // 选中的关卡
+        int selectedMenuOption = 0;            // 选中的主菜单选项 (0 = Start Game, 1 = Exit)
     };
     struct Transform
     {

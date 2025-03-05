@@ -3,9 +3,21 @@
 #include <entt/entt.hpp>
 #include <components.h>
 #include <iostream>
-void MovementSystem(entt::registry &registry, GLFWwindow *window)
+#include <unordered_map>
+std::unordered_map<int, bool> g_KeyState;
+void MovementSystem(entt::registry &registry)
 {
-    static bool lastUp = false, lastDown = false, lastLeft = false, lastRight = false;
+    auto gameView = registry.view<components::Game>();
+    for (auto entity : gameView)
+    {
+        auto &game = gameView.get<components::Game>(entity);
+        if (g_KeyState[GLFW_KEY_ESCAPE])
+        {
+            game.state = components::GameState::LevelSelect;
+            g_KeyState[GLFW_KEY_ESCAPE] = false;
+            return;
+        }
+    }
 
     auto view = registry.view<components::Transform, components::Player>();
 
@@ -13,29 +25,29 @@ void MovementSystem(entt::registry &registry, GLFWwindow *window)
     {
         auto &transform = view.get<components::Transform>(entity);
 
-        // 获取按键状态
-        bool currentUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
-        bool currentDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
-        bool currentLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
-        bool currentRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
-
         int dx = 0, dy = 0;
 
-        // **仅在按键“刚被按下”的瞬间触发移动**
-        if (currentUp && !lastUp)
+        // **使用 `g_KeyState` 处理移动逻辑**
+        if (g_KeyState[GLFW_KEY_UP])
+        {
             dy = -1;
-        if (currentDown && !lastDown)
+            g_KeyState[GLFW_KEY_UP] = false; // 防止连续触发
+        }
+        if (g_KeyState[GLFW_KEY_DOWN])
+        {
             dy = 1;
-        if (currentLeft && !lastLeft)
+            g_KeyState[GLFW_KEY_DOWN] = false;
+        }
+        if (g_KeyState[GLFW_KEY_LEFT])
+        {
             dx = -1;
-        if (currentRight && !lastRight)
+            g_KeyState[GLFW_KEY_LEFT] = false;
+        }
+        if (g_KeyState[GLFW_KEY_RIGHT])
+        {
             dx = 1;
-
-        // 记录本帧的按键状态，供下次帧检测
-        lastUp = currentUp;
-        lastDown = currentDown;
-        lastLeft = currentLeft;
-        lastRight = currentRight;
+            g_KeyState[GLFW_KEY_RIGHT] = false;
+        }
 
         if (dx == 0 && dy == 0)
             return; // 没有按键按下，直接返回
@@ -290,7 +302,7 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             {
                 // 玩家
                 auto playerEntity = registry.create();
-                registry.emplace<components::Transform>(playerEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 97.0f));
+                registry.emplace<components::Transform>(playerEntity, glm::vec2(x * 50.0f + 25.0f, y * 50.0f + 25.0f), glm::vec2(50.0f, 50.0f));
                 registry.emplace<components::Render>(playerEntity, "player");
                 registry.emplace<components::Player>(playerEntity);
             }
@@ -374,39 +386,105 @@ bool CheckLevelComplete(entt::registry &registry)
     }
     return false;
 }
-void HandleMenuInput(entt::registry &registry, GLFWwindow *window)
+void HandleMainMenuInput(entt::registry &registry, GLFWwindow *window)
+{
+    auto gameView = registry.view<components::Game>();
+    for (auto entity : gameView)
+    {
+        auto &game = gameView.get<components::Game>(entity);
+        if (g_KeyState[GLFW_KEY_ESCAPE])
+        {
+            glfwSetWindowShouldClose(window, true);
+            g_KeyState[GLFW_KEY_ESCAPE] = false;
+        }
+
+        // **方向键选择菜单项**
+        if (g_KeyState[GLFW_KEY_UP])
+        {
+            game.selectedMenuOption = (game.selectedMenuOption - 1 + 2) % 2;
+            g_KeyState[GLFW_KEY_UP] = false; // 处理后清除按键状态
+        }
+        if (g_KeyState[GLFW_KEY_DOWN])
+        {
+            game.selectedMenuOption = (game.selectedMenuOption + 1) % 2;
+            g_KeyState[GLFW_KEY_DOWN] = false;
+        }
+
+        // **按 Enter 选择菜单项**
+        if (g_KeyState[GLFW_KEY_ENTER])
+        {
+            if (game.selectedMenuOption == 0) // Start Game
+            {
+                game.state = components::GameState::LevelSelect;
+            }
+            else if (game.selectedMenuOption == 1) // Exit
+            {
+                glfwSetWindowShouldClose(window, true);
+            }
+            g_KeyState[GLFW_KEY_ENTER] = false; // 处理后清除状态
+        }
+    }
+}
+void HandleLevelSelectInput(entt::registry &registry)
+{
+    auto gameView = registry.view<components::Game>();
+    for (auto entity : gameView)
+    {
+        auto &game = gameView.get<components::Game>(entity);
+        if (g_KeyState[GLFW_KEY_ESCAPE])
+        {
+            game.state = components::GameState::MainMenu;
+            g_KeyState[GLFW_KEY_ESCAPE] = false;
+            return;
+        }
+
+        // 方向键选择关卡
+        if (g_KeyState[GLFW_KEY_UP])
+        {
+            game.selectedLevel = (game.selectedLevel - 1 + levels.size()) % levels.size();
+            g_KeyState[GLFW_KEY_UP] = false; // 处理后重置状态，避免重复触发
+        }
+        if (g_KeyState[GLFW_KEY_DOWN])
+        {
+            game.selectedLevel = (game.selectedLevel + 1) % levels.size();
+            g_KeyState[GLFW_KEY_DOWN] = false;
+        }
+
+        // 按 Enter 进入游戏
+        if (g_KeyState[GLFW_KEY_ENTER])
+        {
+            game.state = components::GameState::Playing;
+            LoadLevelData(registry, game.selectedLevel);
+            g_KeyState[GLFW_KEY_ENTER] = false;
+        }
+    }
+}
+void RenderMainMenu(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 {
     auto gameView = registry.view<components::Game>();
     for (auto entity : gameView)
     {
         auto &game = gameView.get<components::Game>(entity);
 
-        static bool lastUp = false, lastDown = false, lastEnter = false;
+        renderer.BeginBatch();
 
-        bool currentUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
-        bool currentDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
-        bool currentEnter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
+        // 绘制背景
+        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(800, 600), "background", glm::vec4(1.0f));
 
-        if (currentUp && !lastUp)
-        {
-            game.selectedLevel = (game.selectedLevel - 1 + levels.size()) % levels.size();
-        }
-        if (currentDown && !lastDown)
-        {
-            game.selectedLevel = (game.selectedLevel + 1) % levels.size();
-        }
-        if (currentEnter && !lastEnter)
-        {
-            game.state = components::GameState::Playing;
-            LoadLevelData(registry, game.selectedLevel);
-        }
+        // 选中的选项用红色显示，否则用白色
+        glm::vec4 startColor = (game.selectedMenuOption == 0) ? glm::vec4(1.0f, 0.5f, 0.5f, 1.0f) : glm::vec4(1.0f);
+        glm::vec4 exitColor = (game.selectedMenuOption == 1) ? glm::vec4(1.0f, 0.5f, 0.5f, 1.0f) : glm::vec4(1.0f);
 
-        lastUp = currentUp;
-        lastDown = currentDown;
-        lastEnter = currentEnter;
+        // 绘制 "Start Game" 按钮
+        renderer.DrawQuad(glm::vec2(400, 200), glm::vec2(200, 50), "button", startColor);
+
+        // 绘制 "Exit" 按钮
+        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(200, 50), "button", exitColor);
+
+        renderer.EndBatch();
     }
 }
-void RenderMenu(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
+void RenderLevelSelect(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 {
     auto gameView = registry.view<components::Game>();
     for (auto entity : gameView)
@@ -432,6 +510,7 @@ void RenderMenu(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 #include <chrono>
 #include <thread>
 #include <sokoFold_renderer.h>
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 sokoFold_renderer::Renderer *RENDERER;
 int main()
@@ -454,6 +533,7 @@ int main()
         return -1;
     }
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetKeyCallback(window, key_callback);
     glfwMakeContextCurrent(window);
     sokoFold_renderer::Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
     RENDERER = &renderer;
@@ -462,7 +542,7 @@ int main()
     renderer.loadTexture("wall", "artAssets/2647570.png");
     renderer.loadTexture("crate", "artAssets/icon1.png");
     renderer.loadTexture("goal", "artAssets/icon2.png");
-    renderer.loadTexture("player", "artAssets/tile000.png");
+    renderer.loadTexture("player", "artAssets/246139_8_sq.png");
     renderer.loadTexture("background", "artAssets/bb3c7316dd9515f1f8de28c9b2016cd.jpg");
     renderer.loadTexture("button", "artAssets/icon1.png");
     renderer.loadTexture("white", "artAssets/white.png");
@@ -518,20 +598,33 @@ int main()
         {
             auto &game = gameView.get<components::Game>(entity);
 
-            if (game.state == components::GameState::Menu)
+            if (game.state == components::GameState::MainMenu)
             {
-                // 处理选关界面
-                HandleMenuInput(registry, window);
-                RenderMenu(registry, renderer);
+                HandleMainMenuInput(registry, window);
+                // **清除 OpenGL 画面**
+                gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+                gl->Clear(GL_COLOR_BUFFER_BIT);
+                RenderMainMenu(registry, renderer);
+                // std::cout << std::format("MainMenu\n");
+            }
+            else if (game.state == components::GameState::LevelSelect)
+            {
+                HandleLevelSelectInput(registry);
+                // **清除 OpenGL 画面**
+                gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+                gl->Clear(GL_COLOR_BUFFER_BIT);
+                RenderLevelSelect(registry, renderer);
+                // std::cout << std::format("LevelSelect\n");
             }
             else if (game.state == components::GameState::Playing)
             {
                 // 游戏逻辑
-                MovementSystem(registry, window);
+                MovementSystem(registry);
                 // **清除 OpenGL 画面**
                 gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
                 gl->Clear(GL_COLOR_BUFFER_BIT);
                 RenderSystem(registry, renderer);
+                // std::cout << std::format("Playing\n");
                 // **终端渲染**
                 // TerminalRenderSystem(registry);
 
@@ -539,7 +632,7 @@ int main()
                 if (CheckLevelComplete(registry))
                 {
                     std::cout << "🎉 Level " << game.selectedLevel + 1 << " finish!" << std::endl;
-                    game.state = components::GameState::Menu; // 返回选关界面
+                    game.state = components::GameState::LevelSelect; // 返回选关界面
                 }
             }
         }
@@ -564,4 +657,15 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 
     gl->Viewport(0, 0, width, height);
     RENDERER->SetProjection(width, height);
+}
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (action == GLFW_PRESS)
+    {
+        g_KeyState[key] = true;
+    }
+    else if (action == GLFW_RELEASE)
+    {
+        g_KeyState[key] = false;
+    }
 }
