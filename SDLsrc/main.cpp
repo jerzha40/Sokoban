@@ -72,7 +72,7 @@ int main()
     gl->EnableVertexAttribArray(1);
 
     // 加载着色器
-    Shader shader("${PROJECT_SOURCE_DIR}/SDLsrc/shaders/vertex.glsl", "shaders/fragment.glsl", gl);
+    Shader shader("shaders/vertex.glsl", "shaders/fragment.glsl", gl);
 
     // 主循环
     bool quit = false;
