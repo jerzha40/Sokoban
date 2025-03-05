@@ -7,6 +7,13 @@
 #include <fstream>
 #include <sstream>
 
+// 处理 ssize_t 兼容性
+#ifdef _MSC_VER    // MSVC 编译器
+#include <cstddef> // 包含 ptrdiff_t
+#include <cstdint> // 标准整数类型
+using ssize_t = std::ptrdiff_t;
+#endif
+
 namespace manyfold
 {
     struct face;
