@@ -25,3 +25,7 @@ add_library(imgui STATIC ${backends} ${imghcpp})
 add_executable(depTes depsTest.cpp ${backends} ${imghcpp})
 target_link_libraries(depTes glad glfw)
 
+add_subdirectory(freetype)
+include_directories(freetype/include)
+add_executable(freeTypeTest freeTypeTest.cpp)
+target_link_libraries(freeTypeTest freetype)
