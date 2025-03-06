@@ -476,13 +476,15 @@ void RenderMainMenu(entt::registry &registry, sokoFold_renderer::Renderer &rende
         glm::vec4 exitColor = (game.selectedMenuOption == 1) ? glm::vec4(1.0f, 0.5f, 0.5f, 1.0f) : glm::vec4(1.0f);
 
         // 绘制 "Start Game" 按钮
-        renderer.DrawQuad(glm::vec2(400, 200), glm::vec2(200, 50), "button", startColor);
+        renderer.DrawQuad(glm::vec2(400, 200), glm::vec2(200, 50), "white", startColor);
 
         // 绘制 "Exit" 按钮
-        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(200, 50), "button", exitColor);
+        renderer.DrawQuad(glm::vec2(400, 300), glm::vec2(200, 50), "white", exitColor);
 
         renderer.EndBatch();
     }
+    renderer.RenderText("Start Game", 350 - 25, 200 - 20, 1.0f, glm::vec3(0.5, 0.8, 0.2));
+    renderer.RenderText("Exit", 400 - 25, 300 - 20, 1.0f, glm::vec3(0.8, 0.2, 0.2));
 }
 void RenderLevelSelect(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 {
@@ -504,6 +506,10 @@ void RenderLevelSelect(entt::registry &registry, sokoFold_renderer::Renderer &re
         }
 
         renderer.EndBatch();
+    }
+    for (int i = 0; i < levels.size(); i++)
+    {
+        renderer.RenderText("Level " + std::to_string(i + 1), 350, 200 + i * 50 - 20, 0.8f, glm::vec4(0.1f, 0.2f, 0.9f, 0.1f));
     }
 }
 #include <iostream>
@@ -537,7 +543,7 @@ int main()
     glfwMakeContextCurrent(window);
     sokoFold_renderer::Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
     RENDERER = &renderer;
-
+    renderer.LoadFont("artAssets/GOTHIC.TTF", 48);
     // 载入纹理
     renderer.loadTexture("wall", "artAssets/2647570.png");
     renderer.loadTexture("crate", "artAssets/icon1.png");
