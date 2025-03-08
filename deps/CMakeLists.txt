@@ -29,3 +29,6 @@ add_subdirectory(freetype)
 include_directories(freetype/include)
 add_executable(freeTypeTest freeTypeTest.cpp)
 target_link_libraries(freeTypeTest freetype)
+
+include_directories(miniaudio/)
+add_executable(miniaudioTest miniaudioTest.cpp miniaudio/miniaudio.c)
