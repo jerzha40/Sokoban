@@ -3,8 +3,24 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
+#include <miniaudio.h>
 namespace components
 {
+    // struct DestroyAfterPlay
+    // {
+    //     float delay = 0.5f; // 安全销毁延迟
+    // };
+    struct AudioSource
+    {
+        std::string filePath;
+        bool isMusic = false;    // 是否背景音乐
+        bool loop = false;       // 是否循环
+        bool shouldPlay = false; // 需要播放标记
+        bool isPlaying = false;  // 当前播放状态
+        float volume = 1.0f;
+        ma_sound handle; // miniaudio对象
+        size_t pendingDestroy = 0;
+    };
     enum class GameState
     {
         MainMenu,    // 主菜单

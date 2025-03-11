@@ -103,6 +103,24 @@ void MovementSystem(entt::registry &registry)
                 {
                     boxTransform.position.x += dx * 50.0f;
                     boxTransform.position.y += dy * 50.0f;
+
+                    entt::entity soundEntity = registry.create();
+                    auto &sound = registry.emplace<components::AudioSource>(soundEntity);
+                    // 配置音效参数
+                    sound.filePath = "box.mp3";
+                    sound.isMusic = false;   // 音效类型
+                    sound.loop = false;      // 不循环
+                    sound.shouldPlay = true; // 立即播放
+                    sound.volume = 1.0f;
+                    // registry.emplace<components::DestroyAfterPlay>(soundEntity);
+
+                    auto wallView = registry.view<components::AudioSource>();
+                    size_t i = 0;
+                    for (auto wallEntity : wallView)
+                    {
+                        i++;
+                    }
+                    std::cout << i << "\n";
                 }
                 else
                 {
@@ -403,11 +421,29 @@ void HandleMainMenuInput(entt::registry &registry, GLFWwindow *window)
         {
             game.selectedMenuOption = (game.selectedMenuOption - 1 + 2) % 2;
             g_KeyState[GLFW_KEY_UP] = false; // 处理后清除按键状态
+            entt::entity soundEntity = registry.create();
+            auto &sound = registry.emplace<components::AudioSource>(soundEntity);
+            // 配置音效参数
+            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.isMusic = false;   // 音效类型
+            sound.loop = false;      // 不循环
+            sound.shouldPlay = true; // 立即播放
+            sound.volume = 1.0f;
+            // registry.emplace<components::DestroyAfterPlay>(soundEntity);
         }
         if (g_KeyState[GLFW_KEY_DOWN])
         {
             game.selectedMenuOption = (game.selectedMenuOption + 1) % 2;
             g_KeyState[GLFW_KEY_DOWN] = false;
+            entt::entity soundEntity = registry.create();
+            auto &sound = registry.emplace<components::AudioSource>(soundEntity);
+            // 配置音效参数
+            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.isMusic = false;   // 音效类型
+            sound.loop = false;      // 不循环
+            sound.shouldPlay = true; // 立即播放
+            sound.volume = 1.0f;
+            // registry.emplace<components::DestroyAfterPlay>(soundEntity);
         }
 
         // **按 Enter 选择菜单项**
@@ -443,11 +479,29 @@ void HandleLevelSelectInput(entt::registry &registry)
         {
             game.selectedLevel = (game.selectedLevel - 1 + levels.size()) % levels.size();
             g_KeyState[GLFW_KEY_UP] = false; // 处理后重置状态，避免重复触发
+            entt::entity soundEntity = registry.create();
+            auto &sound = registry.emplace<components::AudioSource>(soundEntity);
+            // 配置音效参数
+            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.isMusic = false;   // 音效类型
+            sound.loop = false;      // 不循环
+            sound.shouldPlay = true; // 立即播放
+            sound.volume = 1.0f;
+            // registry.emplace<components::DestroyAfterPlay>(soundEntity);
         }
         if (g_KeyState[GLFW_KEY_DOWN])
         {
             game.selectedLevel = (game.selectedLevel + 1) % levels.size();
             g_KeyState[GLFW_KEY_DOWN] = false;
+            entt::entity soundEntity = registry.create();
+            auto &sound = registry.emplace<components::AudioSource>(soundEntity);
+            // 配置音效参数
+            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.isMusic = false;   // 音效类型
+            sound.loop = false;      // 不循环
+            sound.shouldPlay = true; // 立即播放
+            sound.volume = 1.5f;
+            // registry.emplace<components::DestroyAfterPlay>(soundEntity);
         }
 
         // 按 Enter 进入游戏
@@ -512,10 +566,39 @@ void RenderLevelSelect(entt::registry &registry, sokoFold_renderer::Renderer &re
         renderer.RenderText("Level " + std::to_string(i + 1), 350, 200 + i * 50 - 20, 0.8f, glm::vec4(0.1f, 0.2f, 0.9f, 0.1f));
     }
 }
+// void AudioCleanupSystem(entt::registry &registry)
+// {
+//     std::vector<entt::entity> toDestroy;
+
+//     // 收集需要销毁的实体
+//     auto view = registry.view<components::AudioSource>();
+//     for (auto entity : view)
+//     {
+//         auto &audio = view.get<components::AudioSource>(entity);
+
+//         // 非音乐且播放完毕的临时音效
+//         if (!audio.isMusic && !audio.isPlaying)
+//         {
+//             // // 释放音频资源
+//             // if (audio.handle.pDataSource != NULL)
+//             // {
+//             //     ma_sound_uninit(&audio.handle);
+//             // }
+//             toDestroy.push_back(entity);
+//         }
+//     }
+
+//     // 统一销毁实体
+//     for (auto entity : toDestroy)
+//     {
+//         registry.destroy(entity);
+//     }
+// }
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <sokoFold_renderer.h>
+#include <sokoFold_audiosystem.h>
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 sokoFold_renderer::Renderer *RENDERER;
@@ -574,8 +657,19 @@ int main()
     auto lastTime = std::chrono::high_resolution_clock::now();
     int frameCount = 0;
 
+    AudioSystem audioSystem(registry);
+    entt::entity bgm = registry.create();
+    auto &bgmAudio = registry.emplace<components::AudioSource>(bgm);
+    bgmAudio.filePath = "GODDESS OF VICTORY NIKKE Global Theme Song TuNGSTeN Hiroyuki SAWANO feat. mizuki Full ver by Mori A._3.mp3";
+    bgmAudio.isMusic = true;
+    bgmAudio.loop = true;
+    bgmAudio.shouldPlay = true; // 设置播放标记
+    bgmAudio.volume = 0.1f;
+
     while (!glfwWindowShouldClose(window))
     {
+        audioSystem.Update();
+        // AudioCleanupSystem(registry);
         // **计算 deltaTime**
         auto currentTime = std::chrono::high_resolution_clock::now();
         float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
