@@ -107,7 +107,7 @@ void MovementSystem(entt::registry &registry)
                     entt::entity soundEntity = registry.create();
                     auto &sound = registry.emplace<components::AudioSource>(soundEntity);
                     // 配置音效参数
-                    sound.filePath = "box.mp3";
+                    sound.filePath = "artAssets/box.mp3";
                     sound.isMusic = false;   // 音效类型
                     sound.loop = false;      // 不循环
                     sound.shouldPlay = true; // 立即播放
@@ -424,7 +424,7 @@ void HandleMainMenuInput(entt::registry &registry, GLFWwindow *window)
             entt::entity soundEntity = registry.create();
             auto &sound = registry.emplace<components::AudioSource>(soundEntity);
             // 配置音效参数
-            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.filePath = "artAssets/menu-sound-1-98856.mp3";
             sound.isMusic = false;   // 音效类型
             sound.loop = false;      // 不循环
             sound.shouldPlay = true; // 立即播放
@@ -438,7 +438,7 @@ void HandleMainMenuInput(entt::registry &registry, GLFWwindow *window)
             entt::entity soundEntity = registry.create();
             auto &sound = registry.emplace<components::AudioSource>(soundEntity);
             // 配置音效参数
-            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.filePath = "artAssets/menu-sound-1-98856.mp3";
             sound.isMusic = false;   // 音效类型
             sound.loop = false;      // 不循环
             sound.shouldPlay = true; // 立即播放
@@ -482,7 +482,7 @@ void HandleLevelSelectInput(entt::registry &registry)
             entt::entity soundEntity = registry.create();
             auto &sound = registry.emplace<components::AudioSource>(soundEntity);
             // 配置音效参数
-            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.filePath = "artAssets/menu-sound-1-98856.mp3";
             sound.isMusic = false;   // 音效类型
             sound.loop = false;      // 不循环
             sound.shouldPlay = true; // 立即播放
@@ -496,7 +496,7 @@ void HandleLevelSelectInput(entt::registry &registry)
             entt::entity soundEntity = registry.create();
             auto &sound = registry.emplace<components::AudioSource>(soundEntity);
             // 配置音效参数
-            sound.filePath = "menu-sound-1-98856.mp3";
+            sound.filePath = "artAssets/menu-sound-1-98856.mp3";
             sound.isMusic = false;   // 音效类型
             sound.loop = false;      // 不循环
             sound.shouldPlay = true; // 立即播放
@@ -660,7 +660,7 @@ int main()
     AudioSystem audioSystem(registry);
     entt::entity bgm = registry.create();
     auto &bgmAudio = registry.emplace<components::AudioSource>(bgm);
-    bgmAudio.filePath = "GODDESS OF VICTORY NIKKE Global Theme Song TuNGSTeN Hiroyuki SAWANO feat. mizuki Full ver by Mori A._3.mp3";
+    bgmAudio.filePath = "artAssets/GODDESS OF VICTORY NIKKE Global Theme Song TuNGSTeN Hiroyuki SAWANO feat. mizuki Full ver by Mori A._3.mp3";
     bgmAudio.isMusic = true;
     bgmAudio.loop = true;
     bgmAudio.shouldPlay = true; // 设置播放标记
