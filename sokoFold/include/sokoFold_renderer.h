@@ -28,7 +28,8 @@ namespace sokoFold_renderer
         void DrawQuad(const glm::vec2 &position,
                       const glm::vec2 &size,
                       const std::string &textureName,
-                      const glm::vec4 &colorTint = glm::vec4(1.0f));
+                      const glm::vec4 &colorTint = glm::vec4(1.0f),
+                      const float rad = 0.0f);
         void SetProjection(int width, int height);
         void LoadFont(const std::string &fontPath, unsigned int fontSize);
         void RenderText(const std::string &text, float x, float y, float scale, glm::vec3 color);

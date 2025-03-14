@@ -37,6 +37,8 @@ namespace components
     {
         glm::vec2 position;
         glm::vec2 size;
+        glm::ivec2 gridpos;
+        float rad = glm::radians(0.0f);
         glm::vec2 velocity;
     };
     struct Render

@@ -10,14 +10,14 @@ std::unordered_map<int, bool> g_KeyState;
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
 float tileSize = 100.0f;
-void LevelAnimationSystem(entt::registry &registry, float t)
+void LevelAnimationSystem(entt::registry &registry, float t, float dt)
 {
     auto goalView = registry.view<components::Goal>();
     for (auto entity : goalView)
     {
         auto &Tras = registry.get<components::Transform>(entity);
         // std::cout << std::format("{} {}\n", Tras.size.x, Tras.size.y);
-        Tras.size = glm::vec2(tileSize * (1 + 0.2 * sin(t)), tileSize * (1 + 0.2 * sin(t)));
+        Tras.size *= exp(0.2 * sin(t) * dt);
     }
 }
 void MovementSystem(entt::registry &registry)
@@ -50,7 +50,7 @@ void MovementSystem(entt::registry &registry)
         }
         if (g_KeyState[GLFW_KEY_DOWN])
         {
-            dy = 1;
+            dy = +1;
             g_KeyState[GLFW_KEY_DOWN] = false;
         }
         if (g_KeyState[GLFW_KEY_LEFT])
@@ -67,8 +67,9 @@ void MovementSystem(entt::registry &registry)
         if (dx == 0 && dy == 0)
             return; // 没有按键按下，直接返回
 
-        int newX = static_cast<int>(transform.position.x / tileSize) + dx;
-        int newY = static_cast<int>(transform.position.y / tileSize) + dy;
+        int newX = transform.gridpos.x + dx;
+        int newY = transform.gridpos.y + dy;
+        std::cout << std::format("({},{})({},{})\n", newX, newY, transform.gridpos.x, transform.gridpos.y);
         bool canMove = true;
 
         // **检测是否撞墙**
@@ -76,8 +77,8 @@ void MovementSystem(entt::registry &registry)
         for (auto wallEntity : wallView)
         {
             auto &wallTransform = wallView.get<components::Transform>(wallEntity);
-            if (static_cast<int>(wallTransform.position.x / tileSize) == newX &&
-                static_cast<int>(wallTransform.position.y / tileSize) == newY)
+            if (wallTransform.gridpos.x == newX &&
+                wallTransform.gridpos.y == newY)
             {
                 canMove = false;
             }
@@ -88,8 +89,8 @@ void MovementSystem(entt::registry &registry)
         for (auto boxEntity : boxView)
         {
             auto &boxTransform = boxView.get<components::Transform>(boxEntity);
-            if (static_cast<int>(boxTransform.position.x / tileSize) == newX &&
-                static_cast<int>(boxTransform.position.y / tileSize) == newY)
+            if (boxTransform.gridpos.x == newX &&
+                boxTransform.gridpos.y == newY)
             {
                 int boxNewX = newX + dx;
                 int boxNewY = newY + dy;
@@ -98,8 +99,8 @@ void MovementSystem(entt::registry &registry)
                 for (auto otherBox : boxView)
                 {
                     auto &otherBoxTransform = boxView.get<components::Transform>(otherBox);
-                    if (static_cast<int>(otherBoxTransform.position.x / tileSize) == boxNewX &&
-                        static_cast<int>(otherBoxTransform.position.y / tileSize) == boxNewY)
+                    if (otherBoxTransform.gridpos.x == boxNewX &&
+                        otherBoxTransform.gridpos.y == boxNewY)
                     {
                         boxCanMove = false;
                     }
@@ -107,8 +108,8 @@ void MovementSystem(entt::registry &registry)
                 for (auto wallEntity : wallView)
                 {
                     auto &wallTransform = wallView.get<components::Transform>(wallEntity);
-                    if (static_cast<int>(wallTransform.position.x / tileSize) == boxNewX &&
-                        static_cast<int>(wallTransform.position.y / tileSize) == boxNewY)
+                    if (wallTransform.gridpos.x == boxNewX &&
+                        wallTransform.gridpos.y == boxNewY)
                     {
                         boxCanMove = false;
                     }
@@ -117,7 +118,9 @@ void MovementSystem(entt::registry &registry)
                 if (boxCanMove)
                 {
                     boxTransform.position.x += dx * tileSize;
-                    boxTransform.position.y += dy * tileSize;
+                    boxTransform.position.y -= dy * tileSize;
+                    boxTransform.gridpos.x += dx;
+                    boxTransform.gridpos.y += dy;
 
                     entt::entity soundEntity = registry.create();
                     auto &sound = registry.emplace<components::AudioSource>(soundEntity);
@@ -147,7 +150,9 @@ void MovementSystem(entt::registry &registry)
         if (canMove)
         {
             transform.position.x += dx * tileSize;
-            transform.position.y += dy * tileSize;
+            transform.position.y -= dy * tileSize;
+            transform.gridpos.x = newX;
+            transform.gridpos.y = newY;
         }
     }
 }
@@ -167,10 +172,11 @@ void RenderSystem(entt::registry &registry, sokoFold_renderer::Renderer &rendere
         // 计算物体的显示位置和大小
         glm::vec2 position = transform.position;
         glm::vec2 size = transform.size;
+        float rad = transform.rad;
 
         // 绘制物体
         // std::cout << std::format("dfsdfsad_{}\n", render.textureName);
-        renderer.DrawQuad(position, size, render.textureName, render.colorTint);
+        renderer.DrawQuad(position, size, render.textureName, render.colorTint, rad);
     }
     // renderer.EndBatch();
 }
@@ -213,8 +219,8 @@ void TerminalRenderSystem(entt::registry &registry)
         for (auto wallEntity : wallView)
         {
             auto &transform = wallView.get<components::Transform>(wallEntity);
-            int x = static_cast<int>(transform.position.x / tileSize);
-            int y = static_cast<int>(transform.position.y / tileSize);
+            int x = transform.gridpos.x;
+            int y = transform.gridpos.y;
             renderedMap[y][x] = '#';
         }
 
@@ -223,8 +229,8 @@ void TerminalRenderSystem(entt::registry &registry)
         for (auto goalEntity : goalView)
         {
             auto &transform = goalView.get<components::Transform>(goalEntity);
-            int x = static_cast<int>(transform.position.x / tileSize);
-            int y = static_cast<int>(transform.position.y / tileSize);
+            int x = transform.gridpos.x;
+            int y = transform.gridpos.y;
             renderedMap[y][x] = '.';
         }
 
@@ -233,8 +239,8 @@ void TerminalRenderSystem(entt::registry &registry)
         for (auto boxEntity : boxView)
         {
             auto &transform = boxView.get<components::Transform>(boxEntity);
-            int x = static_cast<int>(transform.position.x / tileSize);
-            int y = static_cast<int>(transform.position.y / tileSize);
+            int x = transform.gridpos.x;
+            int y = transform.gridpos.y;
             renderedMap[y][x] = '$';
         }
 
@@ -243,8 +249,8 @@ void TerminalRenderSystem(entt::registry &registry)
         for (auto playerEntity : playerView)
         {
             auto &transform = playerView.get<components::Transform>(playerEntity);
-            int x = static_cast<int>(transform.position.x / tileSize);
-            int y = static_cast<int>(transform.position.y / tileSize);
+            int x = transform.gridpos.x;
+            int y = transform.gridpos.y;
             renderedMap[y][x] = '@';
         }
 
@@ -325,12 +331,14 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
 
     // load background
     auto purewhite = registry.create();
-    registry.emplace<components::Transform>(purewhite, glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f), glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f));
+    registry.emplace<components::Transform>(purewhite, glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
     registry.emplace<components::Render>(purewhite, "background", glm::vec4(1.0f, 1.0f, 1.0f, 0.5f));
     registry.emplace<components::Background>(purewhite);
     //^
 
     // 遍历地图并创建对应的实体
+    float tmptilesize = fmin(2.0f / levels[levelIndex].size(), 2.0f / levels[levelIndex][0].size());
+    tileSize = tmptilesize;
     for (int y = 0; y < levels[levelIndex].size(); ++y)
     {
         for (int x = 0; x < levels[levelIndex][y].size(); ++x)
@@ -341,9 +349,24 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             {
                 // 玩家
                 auto playerEntity = registry.create();
-                registry.emplace<components::Transform>(playerEntity, glm::vec2(x * tileSize + tileSize / 2.0f, y * tileSize + tileSize / 2.0f), glm::vec2(tileSize, tileSize));
+                registry.emplace<components::Transform>(playerEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize), glm::ivec2(x, y));
                 registry.emplace<components::Render>(playerEntity, "player");
                 registry.emplace<components::Player>(playerEntity);
+            }
+        }
+    }
+    for (int y = 0; y < levels[levelIndex].size(); ++y)
+    {
+        for (int x = 0; x < levels[levelIndex][y].size(); ++x)
+        {
+            char tile = levels[levelIndex][y][x];
+            if (tile == '.')
+            {
+                // 目标点
+                auto goalEntity = registry.create();
+                registry.emplace<components::Transform>(goalEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize), glm::ivec2(x, y));
+                registry.emplace<components::Render>(goalEntity, "goal");
+                registry.emplace<components::Goal>(goalEntity);
             }
         }
     }
@@ -357,7 +380,7 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             {
                 // **墙壁**
                 auto wallEntity = registry.create();
-                registry.emplace<components::Transform>(wallEntity, glm::vec2(x * tileSize + tileSize / 2.0f, y * tileSize + tileSize / 2.0f), glm::vec2(tileSize, tileSize));
+                registry.emplace<components::Transform>(wallEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize), glm::ivec2(x, y));
                 registry.emplace<components::Render>(wallEntity, "wall");
                 registry.emplace<components::Wall>(wallEntity); // ✅ **正确创建墙壁**
             }
@@ -365,17 +388,9 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             {
                 // 箱子
                 auto boxEntity = registry.create();
-                registry.emplace<components::Transform>(boxEntity, glm::vec2(x * tileSize + tileSize / 2.0f, y * tileSize + tileSize / 2.0f), glm::vec2(tileSize, tileSize));
+                registry.emplace<components::Transform>(boxEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize), glm::ivec2(x, y));
                 registry.emplace<components::Render>(boxEntity, "crate");
                 registry.emplace<components::Box>(boxEntity);
-            }
-            else if (tile == '.')
-            {
-                // 目标点
-                auto goalEntity = registry.create();
-                registry.emplace<components::Transform>(goalEntity, glm::vec2(x * tileSize + tileSize / 2.0f, y * tileSize + tileSize / 2.0f), glm::vec2(tileSize, tileSize));
-                registry.emplace<components::Render>(goalEntity, "goal");
-                registry.emplace<components::Goal>(goalEntity);
             }
         }
     }
@@ -385,16 +400,16 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
         {
             char tile = levels[levelIndex][y][x];
 
-            // 玩家
+            // Ground
             auto playerEntity = registry.create();
-            registry.emplace<components::Transform>(playerEntity, glm::vec2(x * tileSize + tileSize / 2.0f, y * tileSize + tileSize / 2.0f), glm::vec2(tileSize * 1.3, tileSize * 1.3));
+            registry.emplace<components::Transform>(playerEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize), glm::ivec2(x, y));
             registry.emplace<components::Render>(playerEntity, "ground");
             registry.emplace<components::Ground>(playerEntity);
         }
     }
     // load background
     auto backgroundEntity = registry.create();
-    registry.emplace<components::Transform>(backgroundEntity, glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f), glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+    registry.emplace<components::Transform>(backgroundEntity, glm::vec2(0.0f, 0.0f), glm::vec2(SCR_WIDTH, SCR_HEIGHT));
     registry.emplace<components::Render>(backgroundEntity, "white");
     registry.emplace<components::Background>(backgroundEntity);
     //^
@@ -428,8 +443,8 @@ bool CheckLevelComplete(entt::registry &registry)
         for (auto boxEntity : boxView)
         {
             auto &transform = boxView.get<components::Transform>(boxEntity);
-            int x = static_cast<int>(transform.position.x / tileSize);
-            int y = static_cast<int>(transform.position.y / tileSize);
+            int x = transform.gridpos.x;
+            int y = transform.gridpos.y;
             coveredGoals.insert({x, y});
         }
 
@@ -565,22 +580,23 @@ void RenderMainMenu(entt::registry &registry, sokoFold_renderer::Renderer &rende
         renderer.BeginBatch();
 
         // 绘制背景
-        renderer.DrawQuad(glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f), glm::vec2(SCR_WIDTH, SCR_HEIGHT), "white", glm::vec4(1.0f));
+        renderer.DrawQuad(glm::vec2(+0.0f, +0.0f), glm::vec2(2.0f, 2.0f), "white", glm::vec4(1.0f));
 
         // 选中的选项用红色显示，否则用白色
         glm::vec4 startColor = (game.selectedMenuOption == 0) ? glm::vec4(1.0f, 0.5f, 0.5f, 1.0f) : glm::vec4(1.0f);
         glm::vec4 exitColor = (game.selectedMenuOption == 1) ? glm::vec4(0.5f, 1.0f, 0.5f, 1.0f) : glm::vec4(1.0f);
 
         // 绘制 "Start Game" 按钮
-        renderer.DrawQuad(glm::vec2(SCR_WIDTH / 2.0f, 2.0f * SCR_HEIGHT / 6.0f), glm::vec2(2 * SCR_WIDTH / 4.0f, 1.5 * SCR_HEIGHT / 12.0f), "button", startColor);
+        renderer.DrawQuad(glm::vec2(0.0f, +1.0f / 6.0f), glm::vec2(1.0f, 1.0f / 6.0f), "button", startColor);
 
         // 绘制 "Exit" 按钮
-        renderer.DrawQuad(glm::vec2(SCR_WIDTH / 2.0f, 3.0f * SCR_HEIGHT / 6.0f), glm::vec2(2 * SCR_WIDTH / 4.0f, 1.5 * SCR_HEIGHT / 12.0f), "button", exitColor);
+        renderer.DrawQuad(glm::vec2(0.0f, -1.0f / 6.0f), glm::vec2(1.0f, 1.0f / 6.0f), "button", exitColor);
 
         renderer.EndBatch();
     }
-    renderer.RenderText("Start", (400 - 30) * SCR_WIDTH / 800.0f, (200 - 20) * SCR_HEIGHT / 600.0f, SCR_HEIGHT / 1200.0f, glm::vec3(0.5, 0.8, 0.2));
-    renderer.RenderText("Exit", (400 - 30) * SCR_WIDTH / 800.0f, (300 - 20) * SCR_HEIGHT / 600.0f, SCR_HEIGHT / 1200.0f, glm::vec3(0.8, 0.2, 0.2));
+    renderer.RenderText("SokoFold", 0.0f, +4.0f / 6.0f, 24.0f / 10000.0f, glm::vec3(0.5137, 0.0, 0.0));
+    renderer.RenderText("Start", 0.0f, +1.0f / 6.0f, 12.0f / 10000.0f, glm::vec3(0.5, 0.8, 0.2));
+    renderer.RenderText("Exit ", 0.0f, -1.0f / 6.0f, 12.0f / 10000.0f, glm::vec3(0.8, 0.2, 0.2));
 }
 void RenderLevelSelect(entt::registry &registry, sokoFold_renderer::Renderer &renderer)
 {
@@ -592,20 +608,20 @@ void RenderLevelSelect(entt::registry &registry, sokoFold_renderer::Renderer &re
         renderer.BeginBatch();
 
         // 绘制背景
-        renderer.DrawQuad(glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 2.0f), glm::vec2(SCR_WIDTH, SCR_HEIGHT), "white", glm::vec4(1.0f));
+        renderer.DrawQuad(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f), "white", glm::vec4(1.0f));
 
         // 绘制关卡按钮
         for (int i = 0; i < levels.size(); i++)
         {
             glm::vec4 color = (i == game.selectedLevel) ? glm::vec4(1.0f, 0.5f, 0.5f, i * 0.5f + 0.1f) : glm::vec4(1.0f);
-            renderer.DrawQuad(glm::vec2(SCR_WIDTH / 2.0f, SCR_HEIGHT / 3.0f + 1.5 * i * SCR_HEIGHT / 12.0f), glm::vec2(2 * SCR_WIDTH / 4.0f, 1.5 * SCR_HEIGHT / 15.0f), "button", color);
+            renderer.DrawQuad(glm::vec2(0.0f, (1.0f - i) / 6.0f), glm::vec2(1.0f, 1.0f / 6.0f), "button", color, 0.0f);
         }
 
         renderer.EndBatch();
     }
     for (int i = 0; i < levels.size(); i++)
     {
-        renderer.RenderText("Level " + std::to_string(i + 1), 350 * SCR_WIDTH / 800.0f, SCR_HEIGHT / 3.0f + 1.5 * i * SCR_HEIGHT / 12.0f - 20 * SCR_HEIGHT / 600.0f, 0.7f * SCR_HEIGHT / 1200.0f, glm::vec4(0.1f, 0.2f, 0.9f, 0.1f));
+        renderer.RenderText("Level " + std::to_string(i + 1), 0.0f, (1.0f - i) / 6.0f, 12.0f / 10000.0f, glm::vec4(0.1f, 0.2f, 0.9f, 0.1f));
     }
 }
 // void AudioCleanupSystem(entt::registry &registry)
@@ -641,6 +657,8 @@ void RenderLevelSelect(entt::registry &registry, sokoFold_renderer::Renderer &re
 #include <thread>
 #include <sokoFold_renderer.h>
 #include <sokoFold_audiosystem.h>
+// #define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 sokoFold_renderer::Renderer *RENDERER;
@@ -665,10 +683,15 @@ int main()
     }
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
+    GLFWimage window_icon;
+    window_icon.pixels = stbi_load("artAssets/inferno.png", &window_icon.width, &window_icon.height, 0, 4); // rgba channels
+    glfwSetWindowIcon(window, 1, &window_icon);
+    stbi_image_free(window_icon.pixels);
+
     glfwMakeContextCurrent(window);
     sokoFold_renderer::Renderer renderer(800, 600, window); // 创建 OpenGL 渲染器
     RENDERER = &renderer;
-    renderer.LoadFont("artAssets/GOTHIC.TTF", 48 * 2);
+    renderer.LoadFont("artAssets/GOTHIC.TTF", 24 * 4);
     // 载入纹理
     renderer.loadTexture("wall", "artAssets/2647570.png");
     renderer.loadTexture("crate", "artAssets/iceBox.png");
@@ -747,7 +770,7 @@ int main()
             {
                 HandleMainMenuInput(registry, window);
                 // **清除 OpenGL 画面**
-                gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+                gl->ClearColor(0.3059f, 0.2627f, 0.0667f, 1.0f);
                 gl->Clear(GL_COLOR_BUFFER_BIT);
                 RenderMainMenu(registry, renderer);
                 // std::cout << std::format("MainMenu\n");
@@ -756,7 +779,7 @@ int main()
             {
                 HandleLevelSelectInput(registry);
                 // **清除 OpenGL 画面**
-                gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+                gl->ClearColor(0.3059f, 0.2627f, 0.0667f, 1.0f);
                 gl->Clear(GL_COLOR_BUFFER_BIT);
                 RenderLevelSelect(registry, renderer);
                 // std::cout << std::format("LevelSelect\n");
@@ -764,10 +787,10 @@ int main()
             else if (game.state == components::GameState::Playing)
             {
                 // 游戏逻辑
-                LevelAnimationSystem(registry, t);
+                LevelAnimationSystem(registry, t, deltaTime);
                 MovementSystem(registry);
                 // **清除 OpenGL 画面**
-                gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+                gl->ClearColor(0.3059f, 0.2627f, 0.0667f, 1.0f);
                 gl->Clear(GL_COLOR_BUFFER_BIT);
                 RenderSystem(registry, renderer);
                 // std::cout << std::format("Playing\n");

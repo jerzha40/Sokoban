@@ -9,11 +9,12 @@ namespace sokoFold_renderer
         
         uniform mat4 projection;
         uniform mat4 model;
+        uniform mat4 view;
         
         out vec2 uv;
         
         void main() {
-            gl_Position = projection * model * vec4(aPos, 0.0, 1.0);
+            gl_Position = projection * view * model * vec4(aPos, 0.0, 1.0);
             uv = aUV;
         }
         )";
@@ -34,10 +35,12 @@ namespace sokoFold_renderer
         #version 330 core
         layout (location = 0) in vec4 aPosTex; // <vec2 pos, vec2 tex>
         uniform mat4 projection;
+        uniform mat4 model;
+        uniform mat4 view;
         out vec2 TexCoords;
     
         void main() {
-        gl_Position = projection * vec4(aPosTex.xy, 0.0, 1.0);
+        gl_Position = projection * view * model * vec4(aPosTex.xy, 0.0, 1.0);
         TexCoords = aPosTex.zw;
     })";
 
@@ -212,27 +215,35 @@ namespace sokoFold_renderer
         gl->BindVertexArray(m_TextVAO);
 
         // 正交投影矩阵（以像素为单位）
-        glm::mat4 projection = glm::ortho(0.0f, (float)m_WindowWidth, (float)m_WindowHeight, 0.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(60.0f), static_cast<float>(m_WindowWidth) / static_cast<float>(m_WindowHeight), 0.1f, 100.0f);
         gl->UniformMatrix4fv(gl->GetUniformLocation(m_TextShader, "projection"), 1, GL_FALSE, &projection[0][0]);
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.732f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        gl->UniformMatrix4fv(gl->GetUniformLocation(m_TextShader, "view"), 1, GL_FALSE, &view[0][0]);
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(x, y, 0.0f));
+        // model = glm::rotate(model, rad, glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(scale, scale, 1.0f));
+        gl->UniformMatrix4fv(gl->GetUniformLocation(m_ShaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
 
+        float X = 0.0f, Y = 0.0f;
         for (auto c = text.begin(); c != text.end(); c++)
         {
             Character ch = m_Characters[*c];
 
-            float xpos = x + ch.Bearing.x * scale;
-            float ypos = y + (m_Characters['H'].Bearing.y - ch.Bearing.y) * scale;
+            float xpos = X;
+            float ypos = Y;
 
-            float w = ch.Size.x * scale;
-            float h = ch.Size.y * scale;
+            float w = ch.Size.x;
+            float h = ch.Size.y;
 
             float vertices[6][4] = {
-                {xpos, ypos + h, 0.0f, 1.0f},
-                {xpos + w, ypos, 1.0f, 0.0f},
-                {xpos, ypos, 0.0f, 0.0f},
+                {xpos, ypos + h, 0.0f, 0.0f}, // LU
+                {xpos + w, ypos, 1.0f, 1.0f}, // RB
+                {xpos, ypos, 0.0f, 1.0f},
 
-                {xpos, ypos + h, 0.0f, 1.0f},
-                {xpos + w, ypos + h, 1.0f, 1.0f},
-                {xpos + w, ypos, 1.0f, 0.0f}};
+                {xpos, ypos + h, 0.0f, 0.0f}, // LU
+                {xpos + w, ypos + h, 1.0f, 0.0f},
+                {xpos + w, ypos, 1.0f, 1.0f}}; // RB
 
             gl->BindTexture(GL_TEXTURE_2D, ch.TextureID);
             gl->BindBuffer(GL_ARRAY_BUFFER, m_TextVBO);
@@ -240,7 +251,7 @@ namespace sokoFold_renderer
             gl->BindBuffer(GL_ARRAY_BUFFER, 0);
             gl->DrawArrays(GL_TRIANGLES, 0, 6);
 
-            x += (ch.Advance >> 6) * scale;
+            X += (ch.Advance >> 6);
         }
         gl->BindVertexArray(0);
         gl->BindTexture(GL_TEXTURE_2D, 0);
@@ -304,10 +315,13 @@ namespace sokoFold_renderer
     {
         float vertices[] = {
             // 位置       // UV坐标
-            -0.5f, -0.5f, 0.0f, 1.0f, // 左下
-            0.5f, -0.5f, 1.0f, 1.0f,  // 右下
-            0.5f, 0.5f, 1.0f, 0.0f,   // 右上
-            -0.5f, 0.5f, 0.0f, 0.0f   // 左上
+            -0.5f, 0.5f, 0.0f, 1.0f,  // 左上
+            -0.5f, -0.5f, 0.0f, 0.0f, // 左下
+            0.5f, -0.5f, 1.0f, 0.0f,  // 右下
+
+            -0.5f, 0.5f, 0.0f, 1.0f, // 左上
+            0.5f, -0.5f, 1.0f, 0.0f, // 右下
+            0.5f, 0.5f, 1.0f, 1.0f,  // 右上
         };
 
         gl->GenVertexArrays(1, &m_VAO);
@@ -337,10 +351,7 @@ namespace sokoFold_renderer
     {
         gl->UseProgram(m_ShaderProgram);
         // 设置正交投影矩阵
-        glm::mat4 projection = glm::ortho(
-            0.0f, static_cast<float>(m_WindowWidth),
-            static_cast<float>(m_WindowHeight), 0.0f,
-            -1.0f, 1.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(60.0f), static_cast<float>(m_WindowWidth) / static_cast<float>(m_WindowHeight), 0.1f, 100.0f);
         gl->UniformMatrix4fv(gl->GetUniformLocation(m_ShaderProgram, "projection"), 1, GL_FALSE, &projection[0][0]);
     }
 
@@ -348,14 +359,15 @@ namespace sokoFold_renderer
     {
         // 实际渲染调用
         gl->BindVertexArray(m_VAO);
-        gl->DrawArrays(GL_TRIANGLE_FAN, 0, 4); // 绘制四边形
+        gl->DrawArrays(GL_TRIANGLES, 0, 6); // 绘制四边形
         gl->BindVertexArray(0);
     }
 
     void Renderer::DrawQuad(const glm::vec2 &position,
                             const glm::vec2 &size,
                             const std::string &textureName,
-                            const glm::vec4 &colorTint)
+                            const glm::vec4 &colorTint,
+                            const float rad)
     {
         // 绑定纹理
         sokoFold_texture::Texture *tex = getTexture(textureName);
@@ -368,11 +380,15 @@ namespace sokoFold_renderer
         // 原有模型矩阵计算
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(position, 0.0f));
+        model = glm::rotate(model, rad, glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::scale(model, glm::vec3(size, 1.0f));
+
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.732f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         // 提交绘制命令
         // ...（同之前EndBatch逻辑）
         // 设置颜色和变换
+        gl->UniformMatrix4fv(gl->GetUniformLocation(m_ShaderProgram, "view"), 1, GL_FALSE, &view[0][0]);
         gl->UniformMatrix4fv(gl->GetUniformLocation(m_ShaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
         // 绘制
         EndBatch(); // 实际提交绘制命令
