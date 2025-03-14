@@ -74,5 +74,9 @@ namespace components
     {
         /* data */
     };
+    struct Ground
+    {
+        /* data */
+    };
 } // namespace components
 #endif

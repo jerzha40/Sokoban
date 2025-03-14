@@ -4,10 +4,22 @@
 #include <components.h>
 #include <iostream>
 #include <unordered_map>
+#include <iostream>
+#include <format>
 std::unordered_map<int, bool> g_KeyState;
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
 float tileSize = 100.0f;
+void LevelAnimationSystem(entt::registry &registry, float t)
+{
+    auto goalView = registry.view<components::Goal>();
+    for (auto entity : goalView)
+    {
+        auto &Tras = registry.get<components::Transform>(entity);
+        // std::cout << std::format("{} {}\n", Tras.size.x, Tras.size.y);
+        Tras.size = glm::vec2(tileSize * (1 + 0.2 * sin(t)), tileSize * (1 + 0.2 * sin(t)));
+    }
+}
 void MovementSystem(entt::registry &registry)
 {
     auto gameView = registry.view<components::Game>();
@@ -267,6 +279,12 @@ std::vector<std::vector<std::string>> levels = {{// Level 0
                                                  "##########"}};
 void LoadLevelData(entt::registry &registry, int levelIndex)
 {
+    auto groundView = registry.view<components::Ground>();
+    for (auto entity : groundView)
+    {
+        registry.destroy(entity);
+    }
+
     auto playerView = registry.view<components::Player>();
     for (auto entity : playerView)
     {
@@ -327,7 +345,15 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
                 registry.emplace<components::Render>(playerEntity, "player");
                 registry.emplace<components::Player>(playerEntity);
             }
-            else if (tile == '#')
+        }
+    }
+    for (int y = 0; y < levels[levelIndex].size(); ++y)
+    {
+        for (int x = 0; x < levels[levelIndex][y].size(); ++x)
+        {
+            char tile = levels[levelIndex][y][x];
+
+            if (tile == '#')
             {
                 // **墙壁**
                 auto wallEntity = registry.create();
@@ -351,6 +377,19 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
                 registry.emplace<components::Render>(goalEntity, "goal");
                 registry.emplace<components::Goal>(goalEntity);
             }
+        }
+    }
+    for (int y = 0; y < levels[levelIndex].size(); ++y)
+    {
+        for (int x = 0; x < levels[levelIndex][y].size(); ++x)
+        {
+            char tile = levels[levelIndex][y][x];
+
+            // 玩家
+            auto playerEntity = registry.create();
+            registry.emplace<components::Transform>(playerEntity, glm::vec2(x * tileSize + tileSize / 2.0f, y * tileSize + tileSize / 2.0f), glm::vec2(tileSize * 1.3, tileSize * 1.3));
+            registry.emplace<components::Render>(playerEntity, "ground");
+            registry.emplace<components::Ground>(playerEntity);
         }
     }
     // load background
@@ -633,11 +672,12 @@ int main()
     // 载入纹理
     renderer.loadTexture("wall", "artAssets/2647570.png");
     renderer.loadTexture("crate", "artAssets/iceBox.png");
-    renderer.loadTexture("goal", "artAssets/icon2.png");
+    renderer.loadTexture("goal", "artAssets/portal_001.png");
     renderer.loadTexture("player", "artAssets/inferno.png");
     renderer.loadTexture("background", "artAssets/bb3c7316dd9515f1f8de28c9b2016cd.jpg");
     renderer.loadTexture("button", "artAssets/iceBox.png");
     renderer.loadTexture("white", "artAssets/white.png");
+    renderer.loadTexture("ground", "artAssets/tile_001.png");
 
     // 初始化 OpenGL
     GladGLContext *gl;
@@ -669,6 +709,7 @@ int main()
     bgmAudio.shouldPlay = true; // 设置播放标记
     bgmAudio.volume = 0.1f;
 
+    float t = 0;
     while (!glfwWindowShouldClose(window))
     {
         audioSystem.Update();
@@ -676,6 +717,7 @@ int main()
         // **计算 deltaTime**
         auto currentTime = std::chrono::high_resolution_clock::now();
         float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
+        t += deltaTime;
         lastTime = currentTime;
 
         // 计算 FPS
@@ -722,6 +764,7 @@ int main()
             else if (game.state == components::GameState::Playing)
             {
                 // 游戏逻辑
+                LevelAnimationSystem(registry, t);
                 MovementSystem(registry);
                 // **清除 OpenGL 画面**
                 gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
