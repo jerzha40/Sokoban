@@ -380,7 +380,7 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
             {
                 // **墙壁**
                 auto wallEntity = registry.create();
-                registry.emplace<components::Transform>(wallEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize), glm::ivec2(x, y));
+                registry.emplace<components::Transform>(wallEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.0f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize * 2), glm::ivec2(x, y));
                 registry.emplace<components::Render>(wallEntity, "wall");
                 registry.emplace<components::Wall>(wallEntity); // ✅ **正确创建墙壁**
             }
@@ -693,7 +693,7 @@ int main()
     RENDERER = &renderer;
     renderer.LoadFont("artAssets/GOTHIC.TTF", 24 * 4);
     // 载入纹理
-    renderer.loadTexture("wall", "artAssets/2647570.png");
+    renderer.loadTexture("wall", "artAssets/wall_001.png");
     renderer.loadTexture("crate", "artAssets/iceBox.png");
     renderer.loadTexture("goal", "artAssets/portal_001.png");
     renderer.loadTexture("player", "artAssets/inferno.png");
