@@ -402,7 +402,7 @@ void LoadLevelData(entt::registry &registry, int levelIndex)
 
             // Ground
             auto playerEntity = registry.create();
-            registry.emplace<components::Transform>(playerEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize, tmptilesize), glm::ivec2(x, y));
+            registry.emplace<components::Transform>(playerEntity, glm::vec2((x + 0.5f) * tmptilesize - 1.0f, 1.0f - (y + 0.5f) * tmptilesize), glm::vec2(tmptilesize * 1.3, tmptilesize * 1.3), glm::ivec2(x, y));
             registry.emplace<components::Render>(playerEntity, "ground");
             registry.emplace<components::Ground>(playerEntity);
         }
