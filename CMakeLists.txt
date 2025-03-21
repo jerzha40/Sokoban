@@ -14,6 +14,8 @@ add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
 glad_add_library(glad REPRODUCIBLE MX API gl:core=4.3)
 
 # 添加 SDL 子模块
+set(SDL_SHARED OFF CACHE BOOL "Build SDL as a static library" FORCE)
+set(SDL_STATIC ON CACHE BOOL "Build SDL as a static library" FORCE)
 set(SDL_DIR "${CMAKE_SOURCE_DIR}/deps/SDL")
 add_subdirectory(${SDL_DIR})
 
