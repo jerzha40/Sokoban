@@ -223,7 +223,7 @@ namespace sokoFold_renderer
         model = glm::translate(model, glm::vec3(x, y, 0.0f));
         // model = glm::rotate(model, rad, glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::scale(model, glm::vec3(scale, scale, 1.0f));
-        gl->UniformMatrix4fv(gl->GetUniformLocation(m_ShaderProgram, "model"), 1, GL_FALSE, &model[0][0]);
+        gl->UniformMatrix4fv(gl->GetUniformLocation(m_TextShader, "model"), 1, GL_FALSE, &model[0][0]);
 
         float X = 0.0f, Y = 0.0f;
         for (auto c = text.begin(); c != text.end(); c++)
