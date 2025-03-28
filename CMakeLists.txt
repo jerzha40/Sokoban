@@ -9,3 +9,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s -mwindows")
 
 add_subdirectory(deps)
+
+add_executable(windowWithSDL main.cpp shader.cpp)
+target_link_libraries(windowWithSDL glad SDL3::SDL3)
