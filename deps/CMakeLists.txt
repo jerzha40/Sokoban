@@ -5,7 +5,8 @@ message("CMAKE_SOURCE_DIR\t${CMAKE_SOURCE_DIR}")
 
 set(GLAD_SOURCES_DIR "${PROJECT_SOURCE_DIR}/glad")
 add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
-glad_add_library(glad REPRODUCIBLE LOADER API egl=1.5 gles2=2.0)
+glad_add_library(glad REPRODUCIBLE MX API gl:core=4.3)
+# glad_add_library(glad REPRODUCIBLE LOADER API egl=1.5 gles2=2.0)
 
 set(SDL_SHARED OFF CACHE BOOL "Build SDL as a static library" FORCE)
 set(SDL_STATIC ON CACHE BOOL "Build SDL as a static library" FORCE)

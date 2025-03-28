@@ -10,5 +10,5 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s -mwindows")
 
 add_subdirectory(deps)
 
-add_executable(windowWithSDL main.cpp shader.cpp)
+add_executable(windowWithSDL deepseekSDL3src/main.cpp deepseekSDL3src/shader.cpp)
 target_link_libraries(windowWithSDL glad SDL3::SDL3)
