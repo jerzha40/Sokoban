@@ -1,4 +1,4 @@
-#include <glad/gl.h>
+#include <glad/gles2.h>
 #include "shader.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
@@ -13,9 +13,9 @@ int main()
         return -1;
     }
     // 在创建窗口前设置 OpenGL 属性
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4); // 与 GLAD 生成的版本一致
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     // 创建窗口和 OpenGL 上下文
     SDL_Window *window = SDL_CreateWindow("OpenGL Triangle", 800, 600, SDL_WINDOW_OPENGL);
     if (!window)
@@ -34,21 +34,20 @@ int main()
     }
     SDL_GL_MakeCurrent(window, context);
     // 初始化 GLAD
-    GladGLContext *gl;
-    gl = (GladGLContext *)calloc(1, sizeof(GladGLContext));
-    if (!gl)
+    if (!gladLoadGLES2((GLADloadfunc)SDL_GL_GetProcAddress))
     {
-        throw std::invalid_argument("Failed to create context");
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        // SDL_GL_DeleteContext(context);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return -1;
+        fprintf(stderr, "Failed to initialize GLAD\n");
     }
-    int version = gladLoadGLContext(gl, SDL_GL_GetProcAddress);
-    std::cout << "Loaded OpenGL " << GLAD_VERSION_MAJOR(version) << "." << GLAD_VERSION_MINOR(version) << std::endl;
-
-    gl->Viewport(0, 0, 800, 600);
+    const GLubyte *version = glGetString(GL_VERSION);
+    if (version)
+    {
+        std::cout << "GLES Version: " << version << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failed to get GLES version" << std::endl;
+    }
+    glViewport(0, 0, 800, 600);
 
     // 定义顶点数据（位置 + 颜色）
     float vertices[] = {
@@ -59,20 +58,20 @@ int main()
 
     // 创建 VAO 和 VBO
     unsigned int VAO, VBO;
-    gl->GenVertexArrays(1, &VAO);
-    gl->GenBuffers(1, &VBO);
-    gl->BindVertexArray(VAO);
-    gl->BindBuffer(GL_ARRAY_BUFFER, VBO);
-    gl->BufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glGenVertexArraysOES(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glBindVertexArrayOES(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // 设置顶点属性指针
-    gl->VertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
-    gl->EnableVertexAttribArray(0);
-    gl->VertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-    gl->EnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // 加载着色器
-    Shader shader("shaders/vertex.glsl", "shaders/fragment.glsl", gl);
+    Shader shader("shaders/vertex.glsl", "shaders/fragment.glsl");
 
     // 主循环
     bool quit = false;
@@ -87,19 +86,19 @@ int main()
             }
         }
 
-        gl->ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        gl->Clear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
-        gl->BindVertexArray(VAO);
-        gl->DrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArrayOES(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         SDL_GL_SwapWindow(window);
     }
 
     // 清理资源
-    gl->DeleteVertexArrays(1, &VAO);
-    gl->DeleteBuffers(1, &VBO);
+    glDeleteVertexArraysOES(1, &VAO);
+    glDeleteBuffers(1, &VBO);
     // SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();

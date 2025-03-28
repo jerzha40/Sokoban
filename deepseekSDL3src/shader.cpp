@@ -3,10 +3,8 @@
 #include <sstream>
 #include <iostream>
 
-Shader::Shader(const char *vertexPath, const char *fragmentPath, GladGLContext *gl)
+Shader::Shader(const char *vertexPath, const char *fragmentPath)
 {
-    this->gl = gl;
-
     // 读取文件（添加错误检查）
     std::ifstream vShaderFile, fShaderFile;
     std::string vertexCode, fragmentCode;
@@ -31,30 +29,30 @@ Shader::Shader(const char *vertexPath, const char *fragmentPath, GladGLContext *
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();
 
-    unsigned int vertex = gl->CreateShader(GL_VERTEX_SHADER);
-    gl->ShaderSource(vertex, 1, &vShaderCode, nullptr);
-    gl->CompileShader(vertex);
+    unsigned int vertex = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex, 1, &vShaderCode, nullptr);
+    glCompileShader(vertex);
     checkCompileErrors(vertex, "VERTEX");
 
-    unsigned int fragment = gl->CreateShader(GL_FRAGMENT_SHADER);
-    gl->ShaderSource(fragment, 1, &fShaderCode, nullptr);
-    gl->CompileShader(fragment);
+    unsigned int fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment, 1, &fShaderCode, nullptr);
+    glCompileShader(fragment);
     checkCompileErrors(fragment, "FRAGMENT");
 
     // 链接着色器程序
-    ID = gl->CreateProgram();
-    gl->AttachShader(ID, vertex);
-    gl->AttachShader(ID, fragment);
-    gl->LinkProgram(ID);
+    ID = glCreateProgram();
+    glAttachShader(ID, vertex);
+    glAttachShader(ID, fragment);
+    glLinkProgram(ID);
     checkCompileErrors(ID, "PROGRAM");
 
     // 清理
-    gl->DeleteShader(vertex);
-    gl->DeleteShader(fragment);
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
 }
 void Shader::use() const
 {
-    gl->UseProgram(ID);
+    glUseProgram(ID);
 }
 
 void Shader::checkCompileErrors(unsigned int shader, const std::string &type)
@@ -63,20 +61,20 @@ void Shader::checkCompileErrors(unsigned int shader, const std::string &type)
     char infoLog[1024];
     if (type != "PROGRAM")
     {
-        gl->GetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success)
         {
-            gl->GetShaderInfoLog(shader, 1024, nullptr, infoLog);
+            glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
             std::cerr << "ERROR::SHADER_COMPILATION_ERROR: " << type << "\n"
                       << infoLog << std::endl;
         }
     }
     else
     {
-        gl->GetProgramiv(shader, GL_LINK_STATUS, &success);
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
         if (!success)
         {
-            gl->GetProgramInfoLog(shader, 1024, nullptr, infoLog);
+            glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
             std::cerr << "ERROR::PROGRAM_LINKING_ERROR\n"
                       << infoLog << std::endl;
         }
@@ -85,5 +83,5 @@ void Shader::checkCompileErrors(unsigned int shader, const std::string &type)
 
 Shader::~Shader()
 {
-    gl->DeleteProgram(ID);
+    glDeleteProgram(ID);
 }

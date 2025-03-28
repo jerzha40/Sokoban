@@ -1,12 +1,11 @@
 #pragma once
 #include <string>
-#include <glad/gl.h>
+#include <glad/gles2.h>
 
 class Shader
 {
 public:
-    GladGLContext *gl;
-    Shader(const char *vertexPath, const char *fragmentPath, GladGLContext *gl);
+    Shader(const char *vertexPath, const char *fragmentPath);
     ~Shader();
     void use() const;
 
