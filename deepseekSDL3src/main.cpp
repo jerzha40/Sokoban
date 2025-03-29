@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
 #include <iostream>
+#include <cmath>
 
 int main()
 {
@@ -86,7 +87,7 @@ int main()
             }
         }
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(pow(0.2f, 2.2f), pow(0.3f, 2.2f), pow(0.3f, 2.2f), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
